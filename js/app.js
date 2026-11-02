@@ -51,7 +51,7 @@ function montarAvisos() {
   if (emSimulacao()) {
     const faixa = document.getElementById('faixa-simulacao');
     faixa.hidden = false;
-    faixa.innerHTML = `<b>Modo simulação</b> — dados de exemplo; nada é salvo. A planilha Google entra na próxima etapa.`;
+    faixa.innerHTML = `<b>Modo simulação</b> — horário real do 1M; estudos e pendências são exemplos. Nada é salvo ainda.`;
   }
 }
 

@@ -8,7 +8,10 @@ Site estático (HTML, CSS e JavaScript puros, sem build), publicado de graça no
 ## Etapa atual: 1 — modo simulação
 
 - Funcionando: **Início**, **Calendário** e **Cadeiras**. Os outros itens do menu mostram "em breve".
-- Os dados vêm de `data/simulacao.json` (**dados de exemplo**). Nada é gravado.
+- Os dados vêm de `data/simulacao.json`. Aulas, avaliações e feriados são **reais** (PDF do Módulo
+  Morfofuncional I, versão de 15/out); estudos e pendências são **exemplos**. Nada é gravado.
+- Para importar uma nova versão do horário: `python3 ferramentas/importar_horario.py horario.pdf`
+  (requer `pip install pdfplumber`).
 - Ainda **não** há login Google, Drive nem planilha.
 
 ## Como ver no ar
