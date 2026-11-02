@@ -69,8 +69,8 @@ function blocoAvaliacoes(m) {
       <span class="contagem"><b>${a.faltam === 0 ? 'hoje' : a.faltam}</b>${a.faltam === 0 ? '' : a.faltam === 1 ? 'dia' : 'dias'}</span>
       <div>
         <strong>${esc(a.titulo)}</strong>
-        <p class="meta">${DIAS_CURTOS[diaDaSemana(a.data)]}, ${formatoCurto(a.data)}${a.hora ? ` às ${esc(a.hora)}` : ''} · ${esc(a.tipo)}</p>
-        ${a.conteudo ? `<p class="meta">${esc(a.conteudo)}</p>` : ''}
+        <p class="meta">${DIAS_CURTOS[diaDaSemana(a.data)]}, ${formatoCurto(a.data)}${a.hora ? ` às ${esc(a.hora)}` : ''} · ${esc(nomeCadeira(m, a.cadeiraId))} · ${esc(a.tipo)}</p>
+        ${a.obs ? `<p class="meta">${esc(a.obs)}</p>` : ''}
       </div>
     </li>`).join('')}</ul>`;
 }

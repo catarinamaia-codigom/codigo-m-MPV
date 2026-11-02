@@ -10,6 +10,12 @@ const TIPOS_TEORICOS = ['teórica', 'teorica', 'tutoria'];
 const ehTeorica = (aula) => TIPOS_TEORICOS.includes(aula.tipo.toLowerCase());
 const plural = (n, s, p) => (n === 1 ? s : p);
 
+/** "a; b; c; d; e; f" -> "a; b; c; d e mais 2" */
+function resumirLista(texto, max = 4) {
+  const itens = texto.split(';').map((s) => s.trim()).filter(Boolean);
+  return itens.length <= max ? itens.join('; ') : `${itens.slice(0, max).join('; ')} e mais ${itens.length - max}`;
+}
+
 export function gerarSugestoes(m) {
   const { hoje, config } = m;
   const cfg = config.sugestoes;
@@ -26,7 +32,7 @@ export function gerarSugestoes(m) {
     if (faltam < 0 || faltam > cfg.janelaAvaliacaoDias) continue;
     const blocos = m.estudos.filter((e) => e.cadeiraId === av.cadeiraId && e.data >= hoje && e.data <= av.data).length;
     let motivo = `${av.titulo} ${contagemDias(hoje, av.data)} (${formatoCurto(av.data)}).`;
-    if (av.conteudo) motivo += ` Conteúdo: ${av.conteudo}.`;
+    if (av.conteudo) motivo += ` Conteúdo: ${resumirLista(av.conteudo)}.`;
     motivo += blocos
       ? ` Você já marcou ${blocos} ${plural(blocos, 'bloco', 'blocos')} de estudo até lá.`
       : ' Ainda não há estudo marcado para ela.';

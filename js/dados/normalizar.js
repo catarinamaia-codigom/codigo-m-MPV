@@ -54,9 +54,11 @@ export function lerConfig(linhas = []) {
   };
 }
 
+/** Aceita turma única ("TA1") ou várias ("TA1/TA2"): visível se alguma estiver na lista. */
 export function turmaVisivel(turma, turmasVisiveis) {
   const t = txt(turma).toUpperCase();
-  return TURMAS_GERAIS.includes(t.toLowerCase()) || turmasVisiveis.includes(t);
+  if (TURMAS_GERAIS.includes(t.toLowerCase())) return true;
+  return t.split(/[\/,;]/).map((x) => x.trim()).some((x) => turmasVisiveis.includes(x));
 }
 
 const porDataHora = (a, b) =>
@@ -97,11 +99,14 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
       id: txt(a.id),
       data: normalizarData(a.data),
       hora: normalizarHora(a.hora),
+      fim: normalizarHora(a.fim),
       cadeiraId: txt(a.cadeira_id),
       titulo: txt(a.titulo),
       tipo: txt(a.tipo),
       conteudo: txt(a.conteudo),
       turma: txt(a.turma) || 'Todas',
+      local: txt(a.local),
+      obs: txt(a.obs),
     }))
     .filter((a) => a.data)
     .sort(porDataHora);

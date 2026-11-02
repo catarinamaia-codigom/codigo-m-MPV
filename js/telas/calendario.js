@@ -32,7 +32,7 @@ function salvarVisao(v) {
 function eventosDoDia(m, data) {
   const ev = [
     ...m.avaliacoes.filter((a) => a.data === data).map((a) => ({
-      tipo: 'avaliacao', id: a.id, inicio: a.hora, titulo: a.titulo,
+      tipo: 'avaliacao', id: a.id, inicio: a.hora, fim: a.fim, titulo: a.titulo,
       sub: `${nomeCadeira(m, a.cadeiraId)} · ${a.tipo}`, ordem: 0,
     })),
     ...m.aulas.filter((a) => a.data === data).map((a) => ({
@@ -154,11 +154,12 @@ function detalhe(m, tipo, id) {
   } else {
     const a = m.avaliacoes.find((x) => x.id === id);
     abrirModal(a.titulo, `<dl class="detalhes">
-      ${linha('Quando', quando(a.data, a.hora))}
-      ${linha('Cadeira', cadeiraLink(a.cadeiraId))}
+      ${linha('Quando', quando(a.data, a.hora, a.fim))}
+      ${linha('Cadeira', cadeiraLink(a.cadeiraId) || esc(nomeCadeira(m, a.cadeiraId)))}
       ${linha('Tipo', esc(a.tipo))}
       ${linha('Conteúdo', esc(a.conteudo))}
-      ${linha('Turma', esc(a.turma))}
+      ${linha('Observação', esc(a.obs))}
+      ${linha('Local', esc(a.local))}
     </dl>`);
   }
 }

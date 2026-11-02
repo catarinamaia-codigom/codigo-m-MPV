@@ -131,7 +131,8 @@ function detalhe(el, m, id) {
               <div>
                 <strong>${esc(a.titulo)}</strong>
                 <p class="meta">${esc(formatoLongo(a.data))}${a.hora ? ` às ${esc(a.hora)}` : ''} · ${esc(a.tipo)}</p>
-                ${a.conteudo ? `<p class="meta">${esc(a.conteudo)}</p>` : ''}
+                ${a.obs ? `<p class="meta">${esc(a.obs)}</p>` : ''}
+                ${a.conteudo ? `<p class="meta">Conteúdo: ${esc(a.conteudo)}</p>` : ''}
               </div>
             </li>`;
           }).join('')}</ul>` : vazio('Nenhuma avaliação cadastrada.')}

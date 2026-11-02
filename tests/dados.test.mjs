@@ -26,11 +26,22 @@ test('nome de arquivo segue o padrão e tira acentos', () => {
 
 test('só aparecem práticas da turma TA (TA, TA1, TA2) e aulas para todas', () => {
   const m = normalizar(abas, { hojeReal: '2026-11-03' });
-  const turmas = new Set(m.aulas.map((a) => a.turma.toUpperCase()));
-  for (const t of turmas) assert.ok(['TODAS', 'TA', 'TA1', 'TA2'].includes(t), `turma inesperada: ${t}`);
-  assert.ok(m.todasAulas.some((a) => a.turma.startsWith('TB')), 'os dados de exemplo têm aulas de TB');
-  assert.ok(!turmaVisivel('TB1', ['TA', 'TA1', 'TA2']));
+  for (const a of m.aulas) assert.ok(!/TB/.test(a.turma), `aula de TB apareceu: ${a.data} ${a.assunto}`);
+  assert.ok(m.todasAulas.some((a) => a.turma.startsWith('TB')), 'o horário tem práticas de TB');
+  assert.ok(m.aulas.some((a) => a.turma === 'TA1/TA2'), 'práticas TA1/TA2 aparecem');
+  assert.ok(!turmaVisivel('TB1/TB2', ['TA', 'TA1', 'TA2']));
+  assert.ok(turmaVisivel('TA1/TA2', ['TA', 'TA1', 'TA2']));
   assert.ok(turmaVisivel('todas', ['TA']));
+});
+
+test('dados importados do PDF são consistentes', () => {
+  const m = normalizar(abas, { hojeReal: '2026-11-03' });
+  const ids = new Set([...m.cadeiras.map((c) => c.id), ...m.modulos.map((x) => x.id), '']);
+  for (const a of m.todasAulas) assert.ok(ids.has(a.cadeiraId), `cadeira desconhecida: ${a.cadeiraId}`);
+  for (const a of m.avaliacoes) assert.ok(ids.has(a.cadeiraId), `cadeira desconhecida: ${a.cadeiraId}`);
+  const feriados = new Set(m.feriados.map((f) => f.data));
+  for (const a of m.todasAulas) assert.ok(!feriados.has(a.data), `aula em dia sem aula: ${a.data}`);
+  assert.ok(m.avaliacoes.some((a) => a.data === '2026-11-11' && a.cadeiraId === 'anatomia'));
 });
 
 test('Config vira objeto organizado', () => {
@@ -51,5 +62,5 @@ test('sugestões têm motivo e respeitam o limite da Config', () => {
   const s = gerarSugestoes(m);
   assert.ok(s.length > 0 && s.length <= m.config.sugestoes.max);
   for (const x of s) assert.ok(x.motivo.length > 10);
-  assert.equal(s[0].regra, 'avaliacao'); // prova de Bioquímica em 7 dias vem primeiro
+  assert.equal(s[0].regra, 'avaliacao'); // 2ª Avaliação de Anatomia (11/11) vem primeiro
 });
