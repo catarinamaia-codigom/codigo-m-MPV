@@ -203,8 +203,8 @@
   {
    "grupo": "formula_nota",
    "chave": "Bioquímica",
-   "valor": "POS_TESTE + CASOS ; PRATICA + RELATORIO",
-   "obs": "Pós-teste 6,0 + casos clínicos 4,0; prova prática 8,0 + relatório 2,0 — confirmar como vira uma nota"
+   "valor": "A confirmar",
+   "obs": "Dois trabalhos orais, sem prova prática. Pós-teste, prova prática e relatório não entram. Ajustar pelo botão \"+ Avaliação\""
   },
   {
    "grupo": "formula_nota",
@@ -3366,12 +3366,12 @@
    "hora": "07:30",
    "fim": "11:30",
    "cadeira_id": "bioquimica",
-   "titulo": "Prova Prática Bioquímica",
-   "tipo": "Prova prática",
-   "conteudo": "Materiais de laboratório; Química de aminoácidos; Química de proteínas; Enzimas e bioenergética; Coenzimas e Vitaminas 1; Coenzimas e Vitaminas 2; Metab. dos Carb I: Química e Digestão; Reações de coloração e precipitação de proteínas; Metabolismo dos carb.II: glicólise e gliconeogênese; Caracterização da urease; Dosagem de glicose; Metabolismo dos Carb. III: Via das Pentoses; Metabolismo dos carb. IV: metabolismo do glicogênio; Ciclo de Krebs; Cadeia respiratória e fosforilação oxidativa; Metab. dos Lipídeos I: química, digestão e absorção de lipídios; Dosagem de TG; Dosagem de colesterol total; Metab. dos Lipídeos II: oxidação de ácidos graxos; Metab. dos Lipídeos III: Síntese de TG e colesterol; Metab. dos Lipídeos IV: Lipoproteínas; Dosagem de Colesterol HDL; Metabolismo dos aminoácidos; Metabolismo de nucleotídeos; Integração metabólica; Comunicação Celular; Bioq. Tec. Musc. e Motores Moleculares; Dosagem de ácido úrico; Matriz extracelular 1; Matriz extracelular 2; Metabolismo do cálcio e fosfato; Dosagem de Cálcio; Discussão caso clínico diabetes; Metabolismo dos aminoácidos e nucleotídeos",
+   "titulo": "Avaliação de Bioquímica (a confirmar)",
+   "tipo": "A confirmar",
+   "conteudo": "A confirmar",
    "turma": "Todas",
    "local": "CC1",
-   "obs": "Avaliação prática escrita, vale 8,0 (+ relatório de aulas práticas, 2,0)."
+   "obs": "A confirmar: segundo a turma, a nota de Bioquímica vem de dois trabalhos orais, sem prova prática. Data do PDF mantida até confirmar."
   },
   {
    "id": "AV10",
@@ -3540,14 +3540,6 @@
    "descricao": "Ler roteiro da prática de Dosagem de Cálcio (exemplo)",
    "cadeira_id": "bioquimica",
    "prazo": "2026-11-05",
-   "status": "Aberta",
-   "prioridade": "Média"
-  },
-  {
-   "id": "P04",
-   "descricao": "Relatório de aulas práticas de Bioquímica (exemplo)",
-   "cadeira_id": "bioquimica",
-   "prazo": "2026-12-04",
    "status": "Aberta",
    "prioridade": "Média"
   },

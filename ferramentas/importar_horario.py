@@ -170,12 +170,17 @@ def classificar(brutas):
                 tipo = 'Prova final (se necessário)'
             elif 'INTEGRADA' in up:
                 tipo = 'Prova integrada'
+            elif cad == 'bioquimica':
+                tipo = 'A confirmar'
+                tema = 'Avaliação de Bioquímica (a confirmar)'
             elif 'PRÁTICA' in up or cad == 'anatomia':
                 tipo = 'Prova prática'
             else:
                 tipo = 'Prova teórica'
             titulo = ' '.join(w if w in ('ª',) else w.capitalize() for w in tema.lower().split())
             titulo = re.sub(r'\b(\d)ª', r'\1ª', titulo).replace('De ', 'de ').replace('Para ', 'para ')
+            if tipo == 'A confirmar':
+                titulo = tema
             avaliacoes.append(dict(data=b['data'], hora=b['inicio'], fim=b['fim'], cadeira_id=cad, titulo=titulo,
                                    tipo=tipo, conteudo='', turma='Todas', local=local, obs=''))
             continue
@@ -259,7 +264,8 @@ OBS_AVALIACOES = {
     ('anatomia', 'Avaliação'): ('', 'Prática: identificação de peças anatômicas.'),
     ('citologia', 'Prova'): ('', 'Identificação de lâminas ao microscópio óptico (0 a 10).'),
     ('histologia', 'Prova'): ('', 'Identificação de lâminas ao microscópio óptico.'),
-    ('bioquimica', 'Prova'): ('', 'Avaliação prática escrita, vale 8,0 (+ relatório de aulas práticas, 2,0).'),
+    # Catarina: Bioquímica tem dois trabalhos orais, sem prova prática (datas e pesos a confirmar)
+    ('bioquimica', 'Avaliação'): ('A confirmar', 'A confirmar: segundo a turma, a nota de Bioquímica vem de dois trabalhos orais, sem prova prática. Data do PDF mantida até confirmar.'),
     ('morfo1', 'Integrada'): ('Conteúdo do módulo', 'Questões de múltipla escolha; peso 5 no módulo.'),
     ('morfo1', 'Seminário'): ('Seminário integrador', 'Nota entra como 3ª avaliação do módulo. Último dia letivo.'),
     ('morfo1', 'Final'): ('Todo o módulo', '30 a 40 questões de múltipla escolha. Provas finais de 14 a 18/12.'),
