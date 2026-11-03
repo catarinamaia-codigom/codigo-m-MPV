@@ -48,6 +48,9 @@ export function lerConfig(linhas = []) {
     cronograma: mapa('cronograma'),
     tiposMaterial: (grupos.tipo_material ?? []).map((i) => ({ nome: i.chave, icone: i.valor || 'arquivo' })),
     motivosDuvida: (grupos.motivo_duvida ?? []).map((i) => i.chave),
+    tiposAvaliacao: (grupos.tipo_avaliacao ?? []).map((i) => i.chave).filter(Boolean).length
+      ? grupos.tipo_avaliacao.map((i) => i.chave).filter(Boolean)
+      : ['Prova teórica', 'Prova prática', 'Trabalho oral', 'Seminário', 'Prova integrada', 'Trabalho', 'Outro'],
     atalhosIA: (grupos.atalho_ia ?? []).map((i) => ({ nome: i.chave, prompt: i.valor })),
     formulasNota: mapa('formula_nota'),
     grupos, // acesso genérico a qualquer grupo novo criado na planilha

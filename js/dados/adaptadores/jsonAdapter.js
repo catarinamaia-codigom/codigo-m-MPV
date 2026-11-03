@@ -1,6 +1,9 @@
 // Adaptador do MODO SIMULAÇÃO: lê um arquivo JSON local.
 // Formato: { "NomeDaAba": [ {coluna: valor, ...}, ... ], ... }
-// — exatamente o mesmo formato que o adaptador da planilha vai entregar.
+// — exatamente o mesmo formato que o adaptador da planilha entrega.
+// Também serve de semente para preencher a planilha no primeiro login.
+
+const NAO_GRAVA = 'Modo simulação: entre com Google para salvar na sua planilha.';
 
 export class JsonAdapter {
   constructor(url) {
@@ -8,7 +11,6 @@ export class JsonAdapter {
     this.modo = 'simulacao';
   }
 
-  /** Lê todas as abas. */
   async lerAbas() {
     const resp = await fetch(this.url, { cache: 'no-cache' });
     if (!resp.ok) throw new Error(`Não foi possível ler ${this.url} (${resp.status})`);
@@ -20,8 +22,11 @@ export class JsonAdapter {
     return abas;
   }
 
-  /** No modo simulação nada é gravado. */
-  async gravar() {
-    throw new Error('Modo simulação: nada é gravado. A gravação chega com a planilha Google.');
+  async adicionarLinha() {
+    throw new Error(NAO_GRAVA);
+  }
+
+  async atualizarLinha() {
+    throw new Error(NAO_GRAVA);
   }
 }
