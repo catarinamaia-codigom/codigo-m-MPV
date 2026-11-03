@@ -165,6 +165,48 @@
    "obs": ""
   },
   {
+   "grupo": "tipo_avaliacao",
+   "chave": "Prova teórica",
+   "valor": "",
+   "obs": "Opções do campo \"Tipo\" em + Avaliação"
+  },
+  {
+   "grupo": "tipo_avaliacao",
+   "chave": "Prova prática",
+   "valor": "",
+   "obs": ""
+  },
+  {
+   "grupo": "tipo_avaliacao",
+   "chave": "Trabalho oral",
+   "valor": "",
+   "obs": ""
+  },
+  {
+   "grupo": "tipo_avaliacao",
+   "chave": "Seminário",
+   "valor": "",
+   "obs": ""
+  },
+  {
+   "grupo": "tipo_avaliacao",
+   "chave": "Prova integrada",
+   "valor": "",
+   "obs": ""
+  },
+  {
+   "grupo": "tipo_avaliacao",
+   "chave": "Trabalho",
+   "valor": "",
+   "obs": ""
+  },
+  {
+   "grupo": "tipo_avaliacao",
+   "chave": "Outro",
+   "valor": "",
+   "obs": ""
+  },
+  {
    "grupo": "atalho_ia",
    "chave": "Explicar como professor",
    "valor": "Sou estudante do 1º período de Medicina (UPE). Explique {assunto} ({cadeira}) de forma didática, do básico ao aprofundado, com analogias e um resumo final em tópicos.",

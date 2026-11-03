@@ -7,6 +7,7 @@ import { formatoCurto, formatoLongo, contagemDias, DIAS_CURTOS, diaDaSemana, dia
 import { icone } from '../ui/icones.js';
 import { vazio, copiar } from '../ui/componentes.js';
 import { cadeiraPorId, moduloPorId, aulasDaCadeira, avaliacoesDaCadeira } from '../dados/consultas.js';
+import { novaAvaliacao } from './formularios.js';
 
 const dataCurta = (d) => `${DIAS_CURTOS[diaDaSemana(d)]}, ${formatoCurto(d)}`;
 
@@ -122,7 +123,7 @@ function detalhe(el, m, id) {
       </section>
 
       <section class="cartao">
-        <header class="cartao-topo"><h2>${icone('avaliacoes')}<span>Avaliações</span></h2></header>
+        <header class="cartao-topo"><h2>${icone('avaliacoes')}<span>Avaliações</span></h2><button class="btn-novo" data-nova-avaliacao>+ Avaliação</button></header>
         <div class="cartao-corpo">
           ${avs.length ? `<ul class="lista-avaliacoes compacta">${avs.map((a) => {
             const n = diasEntre(m.hoje, a.data);
@@ -139,6 +140,8 @@ function detalhe(el, m, id) {
         </div>
       </section>
     </div>`;
+
+  el.querySelector('[data-nova-avaliacao]').addEventListener('click', () => novaAvaliacao(m, { cadeiraId: c.id }));
 
   el.querySelectorAll('[data-copiar-assunto]').forEach((b) =>
     b.addEventListener('click', () => {

@@ -5,13 +5,16 @@ import { esc } from '../util/texto.js';
 import { formatoLongo, formatoCurto, contagemDias, DIAS_CURTOS, diaDaSemana } from '../util/datas.js';
 import { icone } from '../ui/icones.js';
 import { cartao, vazio, aviso, copiar } from '../ui/componentes.js';
-import { emSimulacao } from '../dados/dataSource.js';
+import { emSimulacao, atualizar } from '../dados/dataSource.js';
+import { novaAvaliacao, novoEstudo, novaPendencia } from './formularios.js';
 import {
   aulasDoDia, estudosDoDia, feriadoDoDia, proximasAvaliacoes, pendenciasAbertas, nomeCadeira,
 } from '../dados/consultas.js';
 import { gerarSugestoes } from '../regras/sugestoes.js';
 
 const maiuscula = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+
+const botaoNovo = (tipo, rotulo) => `<button class="btn-novo" data-novo="${tipo}">+ ${rotulo}</button>`;
 
 function saudacao() {
   const h = new Date().getHours();
@@ -38,7 +41,7 @@ function blocoAulas(m) {
 
 function blocoEstudos(m) {
   const estudos = estudosDoDia(m, m.hoje);
-  if (!estudos.length) return vazio('Nada marcado para hoje. Que tal escolher uma das sugestões?');
+  if (!estudos.length) return vazio('Nada marcado para hoje. Use "+ Estudo" ou escolha uma das sugestões.');
   return `<ul class="lista-check">${estudos.map((e) => `
     <li>
       <label class="${e.feito ? 'feito' : ''}">
@@ -46,7 +49,7 @@ function blocoEstudos(m) {
         <span class="caixa">${icone('check')}</span>
         <span>
           <strong>${esc(e.atividade)}</strong>
-          <span class="meta">${e.inicio ? `${esc(e.inicio)}–${esc(e.fim)} · ` : ''}${esc(nomeCadeira(m, e.cadeiraId))}${e.assunto ? ` · ${esc(e.assunto)}` : ''}</span>
+          <span class="meta">${e.inicio ? `${esc(e.inicio)}${e.fim ? `–${esc(e.fim)}` : ''} · ` : ''}${esc(nomeCadeira(m, e.cadeiraId))}${e.assunto ? ` · ${esc(e.assunto)}` : ''}</span>
         </span>
       </label>
     </li>`).join('')}</ul>`;
@@ -91,6 +94,7 @@ function blocoPendencias(m) {
         <p class="meta">${p.cadeiraId ? `${esc(nomeCadeira(m, p.cadeiraId))} · ` : ''}${p.prazo ? `prazo ${formatoCurto(p.prazo)}` : 'sem prazo'}</p>
       </div>
       ${prazo(p)}
+      <button class="btn-concluir" data-pendencia="${esc(p.id)}" title="Marcar como feita" aria-label="Marcar como feita: ${esc(p.descricao)}">${icone('check', 'ic-mini')}</button>
     </li>`).join('')}</ul>`;
 }
 
@@ -147,22 +151,57 @@ export function render(el, m) {
     <div class="grade-inicio">
       ${cartao({ titulo: 'Aulas de hoje', iconeNome: 'aula', corpo: blocoAulas(m), classe: 'c-aulas',
         extra: `<a class="link-discreto" href="#/calendario">Calendário ${icone('seta', 'ic-mini')}</a>` })}
-      ${cartao({ titulo: 'Marcado para hoje', iconeNome: 'estudo', corpo: blocoEstudos(m), classe: 'c-estudos' })}
-      ${cartao({ titulo: 'Próximas avaliações', iconeNome: 'avaliacoes', corpo: blocoAvaliacoes(m), classe: 'c-avaliacoes' })}
+      ${cartao({ titulo: 'Marcado para hoje', iconeNome: 'estudo', corpo: blocoEstudos(m), classe: 'c-estudos', extra: botaoNovo('estudo', 'Estudo') })}
+      ${cartao({ titulo: 'Próximas avaliações', iconeNome: 'avaliacoes', corpo: blocoAvaliacoes(m), classe: 'c-avaliacoes', extra: botaoNovo('avaliacao', 'Avaliação') })}
       ${cartao({ titulo: 'Sugestão de estudo', iconeNome: 'lampada', corpo: blocoSugestoes(m, sugestoes), classe: 'c-sugestoes' })}
-      ${cartao({ titulo: 'Pendências', iconeNome: 'pendencias', corpo: blocoPendencias(m), classe: 'c-pendencias' })}
+      ${cartao({ titulo: 'Pendências', iconeNome: 'pendencias', corpo: blocoPendencias(m), classe: 'c-pendencias', extra: botaoNovo('pendencia', 'Pendência') })}
       ${cartao({ titulo: 'Atalhos de IA', iconeNome: 'ia', corpo: blocoAtalhos(m, contextos), classe: 'c-atalhos' })}
     </div>`;
 
-  // Marcar estudo como feito (no modo simulação, só na tela)
+  // Marcar estudo como feito (grava na planilha; no modo simulação, só na tela)
   el.querySelectorAll('[data-estudo]').forEach((cb) =>
-    cb.addEventListener('change', () => {
+    cb.addEventListener('change', async () => {
       const estudo = m.estudos.find((e) => e.id === cb.dataset.estudo);
-      estudo.feito = cb.checked;
-      cb.closest('label').classList.toggle('feito', cb.checked);
-      if (emSimulacao()) aviso('Modo simulação: marcado só nesta tela, não foi salvo.');
+      const label = cb.closest('label');
+      label.classList.toggle('feito', cb.checked);
+      if (emSimulacao()) {
+        estudo.feito = cb.checked;
+        aviso('Modo simulação: marcado só nesta tela. Entre com Google para salvar.');
+        return;
+      }
+      cb.disabled = true;
+      try {
+        await atualizar('Estudos', estudo.id, { feito: cb.checked });
+      } catch (erro) {
+        cb.checked = !cb.checked;
+        label.classList.toggle('feito', cb.checked);
+        cb.disabled = false;
+        aviso(erro.message);
+      }
     })
   );
+
+  // Concluir pendência
+  el.querySelectorAll('[data-pendencia]').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      if (emSimulacao()) {
+        aviso('Modo simulação: entre com Google para salvar.');
+        return;
+      }
+      btn.disabled = true;
+      try {
+        await atualizar('Pendencias', btn.dataset.pendencia, { status: 'Feita' });
+        aviso('Pendência concluída.');
+      } catch (erro) {
+        btn.disabled = false;
+        aviso(erro.message);
+      }
+    })
+  );
+
+  // "+ Estudo", "+ Avaliação", "+ Pendência"
+  const novos = { estudo: novoEstudo, avaliacao: novaAvaliacao, pendencia: novaPendencia };
+  el.querySelectorAll('[data-novo]').forEach((btn) => btn.addEventListener('click', () => novos[btn.dataset.novo](m)));
 
   // Atalhos de IA: preenche o prompt, copia e abre o chat
   el.querySelectorAll('[data-atalho]').forEach((btn) =>
