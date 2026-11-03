@@ -433,3 +433,46 @@ a.tag:hover { color: var(--vermelho-escuro); background: var(--vermelho-suave); 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* ── Login, formulários e botões de cadastro (Etapa 2) ───────── */
+.btn-google {
+  width: 100%; justify-content: center; margin-bottom: 12px;
+  background: var(--vermelho); border-color: var(--vermelho); color: var(--branco); font-weight: 600;
+}
+.btn-google:hover { background: var(--vermelho-escuro); border-color: var(--vermelho-escuro); color: var(--branco); }
+.rodape-conectada { display: flex; align-items: center; gap: 6px; color: var(--verde) !important; font-weight: 500; }
+.rodape-links { margin-bottom: 10px !important; }
+.rodape-links a { display: inline-flex; align-items: center; gap: 3px; }
+.link-botao { border: 0; background: none; padding: 0; color: var(--vermelho); font: inherit; text-decoration: underline; cursor: pointer; }
+.faixa-erro { background: #fff4e5; border-color: #f3c98b; color: #7a4a00; }
+
+.btn-novo {
+  border: 1px solid var(--vermelho-borda); background: var(--vermelho-suave); color: var(--vermelho-escuro);
+  border-radius: 99px; padding: 3px 10px; font-size: 12.5px; font-weight: 600; white-space: nowrap;
+}
+.btn-novo:hover { background: var(--vermelho); border-color: var(--vermelho); color: var(--branco); }
+
+.btn-concluir {
+  width: 26px; height: 26px; flex: none; display: grid; place-items: center; padding: 0;
+  border: 1px solid var(--neutro-borda); border-radius: 99px; background: var(--superficie); color: var(--texto-3);
+}
+.btn-concluir:hover { border-color: var(--vermelho); color: var(--vermelho); background: var(--vermelho-suave); }
+
+.formulario-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.formulario .campo { margin: 0; }
+.formulario .campo.largo { grid-column: 1 / -1; }
+.formulario .campo label { font-weight: 500; color: var(--texto); }
+.formulario .campo label small { color: var(--texto-3); font-weight: 400; }
+.formulario input, .formulario textarea {
+  width: 100%; padding: 8px 10px; border-radius: var(--raio-p); border: 1px solid var(--neutro-borda); background: var(--superficie);
+}
+.formulario textarea { resize: vertical; }
+.formulario input:focus, .formulario select:focus, .formulario textarea:focus { outline: 2px solid var(--vermelho); outline-offset: 0; border-color: var(--vermelho); }
+.formulario .dica { color: var(--texto-3); font-size: 12px; }
+.formulario-erro { margin: 12px 0 0; color: var(--vermelho-escuro); background: var(--vermelho-suave); padding: 8px 10px; border-radius: var(--raio-p); font-size: 13.5px; }
+.formulario-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.btn-principal { background: var(--vermelho); border-color: var(--vermelho); color: var(--branco); }
+.btn-principal:hover { background: var(--vermelho-escuro); border-color: var(--vermelho-escuro); color: var(--branco); }
+.btn-principal:disabled { opacity: 0.7; cursor: wait; }
+.modal { width: min(560px, 100%); }
+@media (max-width: 560px) { .formulario-campos { grid-template-columns: 1fr; } }

@@ -1,5 +1,10 @@
 # Abas e colunas (planilha Google e `data/simulacao.json`)
 
+A planilha real é **Código M - Dados** (Drive > Estudio-IA > 20-Medicina > Código M).
+Pode editar à vontade direto no Google Planilhas: o site lê de novo a cada abertura.
+Só não renomeie as abas nem a 1ª linha (cabeçalho) de cada uma. Se apagar uma aba,
+o site a recria vazia, só com o cabeçalho.
+
 O arquivo `data/simulacao.json` tem **exatamente** as mesmas abas e colunas da
 futura planilha. Cada aba é uma lista de linhas; a 1ª linha da planilha é o
 cabeçalho com os nomes das colunas abaixo.
@@ -20,6 +25,7 @@ Cada item de lista é **uma linha**, para ser fácil incluir ou apagar.
 | `cronograma` | perfil do cronograma (horas por dia, horário preferido) | `horas_estudo_dia_util` = `2.5` |
 | `tipo_material` | chave = nome do tipo, valor = ícone | `Resumo` → `resumo` |
 | `motivo_duvida` | chave = motivo | `Errei questão` |
+| `tipo_avaliacao` | chave = opção do campo "Tipo" em + Avaliação | `Trabalho oral` |
 | `atalho_ia` | chave = nome do botão, valor = prompt (`{assunto}`, `{cadeira}`, `{periodo}`) | `Gerar flashcards` |
 | `formula_nota` | chave = módulo/cadeira, valor = fórmula | `(P1 + P2 + INTEGRADA) / 3` |
 

@@ -1,6 +1,8 @@
 // Código M — inicialização, menu lateral e navegação entre telas.
 
-import { carregar, emSimulacao } from './dados/dataSource.js';
+import { carregar, emSimulacao, mensagemCarga, acabouDePreencher, linkPlanilha } from './dados/dataSource.js';
+import * as google from './dados/google.js';
+import { aviso } from './ui/componentes.js';
 import { icone } from './ui/icones.js';
 import { esc } from './util/texto.js';
 import { formatoLongo, paraISO } from './util/datas.js';
@@ -44,18 +46,67 @@ function montarMenu() {
 
 function montarAvisos() {
   const forcado = modelo.hoje !== paraISO(new Date());
+  const simulacao = emSimulacao();
+  const conta = google.configurado()
+    ? simulacao
+      ? `<button class="btn btn-google" id="entrar">${icone('pessoa')} Entrar com Google</button>`
+      : `<p class="rodape-conectada">${icone('checkCirculo', 'ic-mini')} Planilha conectada</p>
+         <p class="rodape-links"><a href="${esc(linkPlanilha())}" target="_blank" rel="noopener">Abrir planilha ${icone('externo', 'ic-mini')}</a>
+         · <button class="link-botao" id="sair">Sair</button></p>`
+    : '';
   document.getElementById('lateral-rodape').innerHTML = `
+    ${conta}
     <p class="rodape-periodo">${esc(modelo.config.periodo)} · ${esc(modelo.config.semestre)} · Turma ${esc(modelo.config.turma)}</p>
     <p class="rodape-hoje">${forcado ? 'Data simulada: ' : 'Hoje: '}${esc(formatoLongo(modelo.hoje))}</p>`;
 
-  if (emSimulacao()) {
-    const faixa = document.getElementById('faixa-simulacao');
-    faixa.hidden = false;
-    faixa.innerHTML = `<b>Modo simulação</b> — horário real do 1M; estudos e pendências são exemplos. Nada é salvo ainda.`;
+  document.getElementById('entrar')?.addEventListener('click', entrarComGoogle);
+  document.getElementById('sair')?.addEventListener('click', async () => {
+    google.sair();
+    await recarregar();
+    aviso('Você saiu. Mostrando o modo simulação.');
+  });
+
+  const faixa = document.getElementById('faixa-simulacao');
+  const problema = mensagemCarga();
+  faixa.hidden = !simulacao && !problema;
+  faixa.classList.toggle('faixa-erro', Boolean(problema));
+  if (problema) {
+    faixa.innerHTML = `<b>Não consegui abrir a planilha:</b> ${esc(problema)} Mostrando o modo simulação.`;
+  } else if (simulacao) {
+    faixa.innerHTML = google.configurado()
+      ? `<b>Modo simulação</b>: cópia do horário, nada é salvo. <button class="link-botao" data-entrar>Entre com Google</button> para usar sua planilha.`
+      : `<b>Modo simulação</b>: horário real do 1M; estudos e pendências são exemplos. Nada é salvo ainda.`;
+    faixa.querySelector('[data-entrar]')?.addEventListener('click', entrarComGoogle);
   }
 }
 
-function navegar() {
+async function entrarComGoogle() {
+  try {
+    await google.entrar();
+  } catch (erro) {
+    aviso(erro.message);
+    return;
+  }
+  elTela.innerHTML = '<p class="carregando">Abrindo sua planilha…</p>';
+  await recarregar();
+  if (acabouDePreencher()) aviso('Planilha preparada e preenchida com o horário do 1M.');
+  else if (!emSimulacao()) aviso('Planilha conectada.');
+}
+
+/** Lê os dados de novo (da planilha ou do JSON) e redesenha a tela atual. */
+async function recarregar({ rolarTopo = true } = {}) {
+  try {
+    modelo = await carregar();
+  } catch (erro) {
+    console.error(erro);
+    aviso(`Erro ao carregar os dados: ${erro.message}`);
+    return;
+  }
+  montarAvisos();
+  navegar({ rolarTopo });
+}
+
+function navegar({ rolarTopo = true } = {}) {
   const [rota = 'inicio', ...params] = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
   const item = MENU.find((i) => i.rota === rota) ?? MENU[0];
 
@@ -74,11 +125,12 @@ function navegar() {
     console.error(erro);
     elTela.innerHTML = `<div class="erro"><h1>Algo deu errado nesta tela</h1><p>${esc(erro.message)}</p></div>`;
   }
-  window.scrollTo(0, 0);
+  if (rolarTopo) window.scrollTo(0, 0);
 }
 
 async function iniciar() {
   montarMenu();
+  if (google.conectado()) elTela.innerHTML = '<p class="carregando">Abrindo sua planilha…</p>';
   try {
     modelo = await carregar();
   } catch (erro) {
@@ -87,8 +139,11 @@ async function iniciar() {
     return;
   }
   montarAvisos();
-  window.addEventListener('hashchange', navegar);
+  window.addEventListener('hashchange', () => navegar());
+  // Depois de salvar algo na planilha, relê os dados sem pular para o topo
+  window.addEventListener('codigom:dados-mudaram', () => recarregar({ rolarTopo: false }));
   navegar();
+  google.prepararLogin().catch(() => {}); // deixa o popup de login pronto
 }
 
 iniciar();
