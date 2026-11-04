@@ -3635,5 +3635,209 @@
    "data": "2026-12-08",
    "nome": "Nossa Senhora da Conceição (municipal)"
   }
+ ],
+ "Duvidas": [
+  {
+   "id": "D-ex1",
+   "criada": "2026-10-27",
+   "cadeira_id": "histologia",
+   "assunto": "Epitélio de Revestimento",
+   "pergunta": "Por que o epitélio de transição muda de forma quando a bexiga enche? (exemplo)",
+   "motivo": "Não entendi o conceito",
+   "tentativa": "Acho que as células se achatam porque a parede estica.",
+   "resposta": "As células em guarda-chuva da superfície têm placas de membrana (uroplaquinas) que se desdobram com a distensão; o epitélio passa de várias camadas cúbicas a poucas camadas achatadas.",
+   "fonte": "Junqueira, Histologia Básica, cap. 4",
+   "link": "",
+   "status": "Sanada",
+   "sanada_em": "2026-10-29"
+  },
+  {
+   "id": "D-ex2",
+   "criada": "2026-11-03",
+   "cadeira_id": "bioquimica",
+   "assunto": "Metabolismo do cálcio e fosfato",
+   "pergunta": "Qual a diferença entre a ação do PTH e da calcitonina no osso? (exemplo)",
+   "motivo": "Confundo com outro assunto",
+   "tentativa": "",
+   "resposta": "",
+   "fonte": "",
+   "link": "",
+   "status": "Aberta",
+   "sanada_em": ""
+  },
+  {
+   "id": "D-ex3",
+   "criada": "2026-11-02",
+   "cadeira_id": "anatomia",
+   "assunto": "Músculos dos membros inferiores",
+   "pergunta": "Quais músculos fazem a flexão do quadril além do iliopsoas? (exemplo)",
+   "motivo": "Esqueci / preciso revisar",
+   "tentativa": "Reto femoral e sartório.",
+   "resposta": "",
+   "fonte": "",
+   "link": "",
+   "status": "Aberta",
+   "sanada_em": ""
+  }
+ ],
+ "Questoes": [
+  {
+   "id": "Q-ex1",
+   "data": "2026-11-02",
+   "cadeira_id": "histologia",
+   "assunto": "Epitélio de Revestimento",
+   "fonte": "Caderno GoodNotes (exemplo)",
+   "resultado": "Acertou",
+   "confianca": "4",
+   "motivos": "",
+   "obs": ""
+  },
+  {
+   "id": "Q-ex2",
+   "data": "2026-11-02",
+   "cadeira_id": "histologia",
+   "assunto": "Epitélio de Revestimento",
+   "fonte": "Caderno GoodNotes (exemplo)",
+   "resultado": "Acertou",
+   "confianca": "5",
+   "motivos": "",
+   "obs": ""
+  },
+  {
+   "id": "Q-ex3",
+   "data": "2026-11-02",
+   "cadeira_id": "histologia",
+   "assunto": "Epitélio de Revestimento",
+   "fonte": "Caderno GoodNotes (exemplo)",
+   "resultado": "Chutou",
+   "confianca": "2",
+   "motivos": "Confundi conceitos",
+   "obs": ""
+  },
+  {
+   "id": "Q-ex4",
+   "data": "2026-11-03",
+   "cadeira_id": "bioquimica",
+   "assunto": "Metabolismo do cálcio e fosfato",
+   "fonte": "Lista da monitoria (exemplo)",
+   "resultado": "Errou",
+   "confianca": "3",
+   "motivos": "Não sabia o conteúdo; Necessita aprofundamento",
+   "obs": ""
+  },
+  {
+   "id": "Q-ex5",
+   "data": "2026-11-03",
+   "cadeira_id": "bioquimica",
+   "assunto": "Metabolismo do cálcio e fosfato",
+   "fonte": "Lista da monitoria (exemplo)",
+   "resultado": "Acertou",
+   "confianca": "3",
+   "motivos": "",
+   "obs": ""
+  }
+ ],
+ "Notas": [
+  {
+   "id": "N-ex1",
+   "cadeira_id": "biofisica",
+   "avaliacao_id": "",
+   "nome": "1ª Avaliação Biofísica (exemplo)",
+   "vale": "4",
+   "peso": "",
+   "nota": "3,2",
+   "bonus": "",
+   "obs": ""
+  },
+  {
+   "id": "N-ex2",
+   "cadeira_id": "biofisica",
+   "avaliacao_id": "",
+   "nome": "2ª Avaliação Biofísica (exemplo)",
+   "vale": "4",
+   "peso": "",
+   "nota": "",
+   "bonus": "",
+   "obs": ""
+  },
+  {
+   "id": "N-ex3",
+   "cadeira_id": "biofisica",
+   "avaliacao_id": "",
+   "nome": "3ª Avaliação — vídeo em grupo (exemplo)",
+   "vale": "2",
+   "peso": "",
+   "nota": "",
+   "bonus": "",
+   "obs": ""
+  }
+ ],
+ "Materiais": [
+  {
+   "id": "M-ex1",
+   "criado": "2026-10-27",
+   "cadeira_id": "histologia",
+   "assunto": "Epitélio de Revestimento",
+   "tipo": "Slide",
+   "titulo": "Slides — Epitélio de revestimento (exemplo)",
+   "link": "",
+   "origem": "Minha",
+   "copiado": "",
+   "obs": "anotado no GoodNotes"
+  },
+  {
+   "id": "M-ex2",
+   "criado": "2026-10-28",
+   "cadeira_id": "histologia",
+   "assunto": "Epitélio de Revestimento",
+   "tipo": "Resumo",
+   "titulo": "Resumo da turma anterior (exemplo)",
+   "link": "",
+   "origem": "Turma",
+   "copiado": "FALSE",
+   "obs": ""
+  }
+ ],
+ "Cartoes": [
+  {
+   "id": "C-ex1",
+   "criado": "2026-10-29",
+   "cadeira_id": "histologia",
+   "assunto": "Epitélio de Revestimento",
+   "frente": "Onde encontramos epitélio de transição? (exemplo)",
+   "verso": "Nas vias urinárias: bexiga, ureteres e parte da uretra.",
+   "fonte": "Junqueira cap. 4",
+   "origem": "Validado",
+   "vence": "2026-11-04",
+   "estabilidade": "3.7",
+   "dificuldade": "5.2",
+   "revisoes": "1",
+   "lapsos": "0",
+   "ultima": "2026-10-31"
+  },
+  {
+   "id": "C-ex2",
+   "criado": "2026-11-03",
+   "cadeira_id": "bioquimica",
+   "assunto": "Metabolismo do cálcio e fosfato",
+   "frente": "Qual hormônio aumenta a reabsorção renal de cálcio? (exemplo)",
+   "verso": "PTH (paratormônio).",
+   "fonte": "",
+   "origem": "Validado",
+   "vence": "2026-11-03",
+   "estabilidade": "",
+   "dificuldade": "",
+   "revisoes": "0",
+   "lapsos": "0",
+   "ultima": ""
+  }
+ ],
+ "Revisoes": [
+  {
+   "data": "2026-10-31",
+   "cartao_id": "C-ex1",
+   "nota": "3",
+   "intervalo": "4"
+  }
  ]
 }

@@ -73,3 +73,22 @@ test('sem login ou login expirado gera ErroLogin', async () => {
   await assert.rejects(novoAdaptador(falsa, null).lerAbas(), ErroLogin);
   await assert.rejects(novoAdaptador(falsa, 'token-velho').lerAbas(), ErroLogin);
 });
+
+test('planilha antiga ganha as abas novas e as colunas que faltam', async () => {
+  const falsa = new PlanilhaFalsa();
+  const ad = novoAdaptador(falsa);
+  await ad.garantirEstrutura(async () => montarSemente(abasJson));
+  // Simula planilha da etapa 2: sem as abas novas e Estudos sem uma coluna
+  for (const aba of ['Duvidas', 'Questoes', 'Notas', 'Materiais', 'Cartoes', 'Revisoes']) falsa.abas.delete(aba);
+  falsa.abas.get('Avaliacoes').valores[0] = ['id', 'data', 'hora', 'cadeira_id', 'titulo', 'tipo', 'conteudo', 'turma'];
+  assert.equal(await ad.garantirEstrutura(async () => assert.fail('não deveria pedir a semente')), false);
+  assert.deepEqual(falsa.abas.get('Duvidas').valores[0].slice(0, 3), ['id', 'criada', 'cadeira_id']);
+  assert.deepEqual(falsa.abas.get('Avaliacoes').valores[0].slice(-3), ['fim', 'local', 'obs'], 'colunas novas vão para o fim');
+  await ad.adicionarLinhas('Questoes', [
+    { id: 'Q1', data: '2026-11-04', cadeira_id: 'histologia', assunto: 'Epitélio', resultado: 'Acertou', confianca: 4 },
+    { id: 'Q2', data: '2026-11-04', cadeira_id: 'histologia', assunto: 'Epitélio', resultado: 'Chutou', confianca: 1 },
+  ]);
+  const m = normalizar(await ad.lerAbas(), { hojeReal: '2026-11-04' });
+  assert.equal(m.questoes.length, 2);
+  assert.equal(m.questoes.find((q) => q.id === 'Q2').resultado, 'Chutou');
+});

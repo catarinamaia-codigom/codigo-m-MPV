@@ -25,9 +25,17 @@
     <div class="fundo-menu" id="fundo-menu"></div>
 
     <div class="principal">
-      <header class="topo-movel">
-        <button class="btn-icone" id="abrir-menu" aria-label="Abrir menu" aria-controls="lateral"></button>
-        <a class="marca marca-pequena" href="#/inicio"><span class="marca-m">M</span><span class="marca-nome">Código <b>M</b></span></a>
+      <header class="barra" id="barra">
+        <button class="btn-icone so-movel" id="abrir-menu" aria-label="Abrir menu" aria-controls="lateral"></button>
+        <button class="btn-voltar" id="voltar" aria-label="Voltar ao ponto anterior" title="Voltar (Alt+←)"></button>
+        <nav class="barra-trilha" id="trilha" aria-label="Você está em"></nav>
+        <form class="busca" id="busca" role="search">
+          <input id="busca-texto" type="search" placeholder="Buscar assunto, dúvida, material…" aria-label="Buscar" autocomplete="off">
+        </form>
+        <div class="registrar">
+          <button class="btn btn-principal" id="registrar" aria-haspopup="menu" aria-expanded="false"></button>
+          <div class="registrar-menu" id="registrar-menu" role="menu" hidden></div>
+        </div>
       </header>
       <div class="faixa-simulacao" id="faixa-simulacao" hidden></div>
       <main id="tela" tabindex="-1">

@@ -5,20 +5,31 @@ Painel de estudo de Medicina da Catarina — UPE, 1º período (1M), turma TA.
 Site estático (HTML, CSS e JavaScript puros, sem build), publicado de graça no
 **GitHub Pages**. Domínio futuro: `codigom.online`.
 
-## Etapa atual: 2 — planilha Google
+## Etapa atual: 3 — MVP de estudo ativo (04/11/2026)
 
-- Funcionando: **Início**, **Calendário** e **Cadeiras**. Os outros itens do menu mostram "em breve".
-- **Entrar com Google** (menu lateral): o site passa a ler e gravar na planilha
-  "Código M - Dados" (Drive > Estudio-IA > 20-Medicina > Código M). No primeiro login a planilha
-  é preparada sozinha (abas, cabeçalhos, idioma pt-BR) e preenchida com o horário.
-- Na planilha: **+ Avaliação**, **+ Estudo**, **+ Pendência**, marcar estudo como feito e concluir pendência.
-- Sem login, o site mostra o **modo simulação** (cópia em `data/simulacao.json`, nada é salvo).
-- Client ID do Google e ID da planilha ficam em `js/config.js` (não são segredos).
-- Os dados vêm de `data/simulacao.json`. Aulas, avaliações e feriados são **reais** (PDF do Módulo
-  Morfofuncional I, versão de 15/out); estudos e pendências são **exemplos**. Nada é gravado.
-- Para importar uma nova versão do horário: `python3 ferramentas/importar_horario.py horario.pdf`
-  (requer `pip install pdfplumber`).
-- Ainda **não** há login Google, Drive nem planilha.
+- **Todas as telas funcionam**: Início, Calendário, Pendências, Cadeiras (com página de cada
+  **assunto**), Método Catarina, Dúvidas, Questões, Materiais, Avaliações e notas, Configurações e Busca.
+- **Barra do topo** em todas as telas: **Voltar** (volta ao ponto anterior), trilha, busca e
+  **+ Registrar** (dúvida, questão, estudo, cartão, material, avaliação, pendência), que já vem
+  preenchido com a cadeira e o assunto da tela aberta.
+- **Início compacto**: números clicáveis, semana com a agenda do dia escolhido (aulas, estudos com
+  check e avaliações), próximas avaliações, pendências, sugestões com motivo e "+ marcar", atalhos de IA.
+- **Método Catarina**: revisão espaçada FSRS (cartões validados primeiro, depois automáticos),
+  teclas espaço e 1–4, importação de texto do Anki, gráficos de revisões e previsão.
+- **Questões**: acertou/errou/chutou com confiança 1–5 e motivos; registro rápido para corrigir um
+  caderno inteiro; acerto por cadeira e assunto; **domínio por assunto** calculado sozinho, com motivo.
+- **Dúvidas**: aba única; tentativa própria ao lado da resposta conferida com fonte; botão Tutor
+  (copia um prompt que pede sua tentativa antes de dar pistas); dúvida sanada vira cartão.
+- **Avaliações e notas**: calculadora por cadeira/módulo com notas reais, peso, bônus, "quanto preciso",
+  final (média 7 / final 5, configurável) e **simulação** que não grava.
+- **Materiais**: links por cadeira e assunto, ícone por tipo, material da turma com check "copiado".
+- **Configurações**: situação de cada integração e importação do backup do Código M antigo (ChatGPT).
+- **Modo simulação** (sem login): dá para testar tudo; o que for criado some ao recarregar.
+- Com **Entrar com Google**, tudo grava na planilha "Código M - Dados". As abas novas são criadas
+  sozinhas no próximo login (veja `docs/PLANILHA.md`).
+
+Ainda **não** ligado (depende de permissão do Google ou decisão): envio de arquivos ao Drive,
+Google Agenda nos dois sentidos, transcrição/OCR/IA por API (pagos — fora até você decidir).
 
 ## Como ver no ar
 
@@ -50,7 +61,8 @@ js/dados/adaptadores/      jsonAdapter (simulação) e sheetsAdapter (planilha)
 js/dados/normalizar.js     converte texto da planilha em dados (datas, turma TA…)
 js/dados/consultas.js      consultas usadas pelas telas
 js/regras/sugestoes.js     sugestão de estudo por regras, com motivo
-js/telas/                  Início, Calendário, Cadeiras, formulários de cadastro, Em breve
+js/telas/                  uma tela por arquivo + formularios.js (todos os "+ Registrar")
+js/regras/                 sugestões, FSRS (fsrs.js), notas, domínio, importação do backup antigo
 js/ui/                     ícones e componentes
 docs/PLANILHA.md           abas e colunas da planilha / do JSON
 ```

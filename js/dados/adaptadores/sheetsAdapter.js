@@ -15,11 +15,18 @@ export const COLUNAS = {
   Estudos: ['id', 'data', 'inicio', 'fim', 'cadeira_id', 'assunto', 'atividade', 'feito'],
   Pendencias: ['id', 'descricao', 'cadeira_id', 'prazo', 'status', 'prioridade'],
   Feriados: ['data', 'nome'],
+  // Etapa 3 — estudo ativo
+  Duvidas: ['id', 'criada', 'cadeira_id', 'assunto', 'pergunta', 'motivo', 'tentativa', 'resposta', 'fonte', 'link', 'status', 'sanada_em'],
+  Questoes: ['id', 'data', 'cadeira_id', 'assunto', 'fonte', 'resultado', 'confianca', 'motivos', 'obs'],
+  Notas: ['id', 'cadeira_id', 'avaliacao_id', 'nome', 'vale', 'peso', 'nota', 'bonus', 'obs'],
+  Materiais: ['id', 'criado', 'cadeira_id', 'assunto', 'tipo', 'titulo', 'link', 'origem', 'copiado', 'obs'],
+  Cartoes: ['id', 'criado', 'cadeira_id', 'assunto', 'frente', 'verso', 'fonte', 'origem', 'vence', 'estabilidade', 'dificuldade', 'revisoes', 'lapsos', 'ultima'],
+  Revisoes: ['data', 'cartao_id', 'nota', 'intervalo'],
 };
 export const ABAS = Object.keys(COLUNAS);
 
 /** Abas que NÃO recebem os dados de exemplo do JSON (começam vazias na planilha). */
-const ABAS_SEM_EXEMPLO = ['Estudos', 'Pendencias'];
+const ABAS_SEM_EXEMPLO = ['Estudos', 'Pendencias', 'Duvidas', 'Questoes', 'Notas', 'Materiais', 'Cartoes', 'Revisoes'];
 
 const API = 'https://sheets.googleapis.com/v4/spreadsheets';
 
@@ -140,10 +147,22 @@ export class SheetsAdapter {
     for (const aba of faltando) pedidos.push({ addSheet: { properties: { title: aba } } });
     if (pedidos.length) await this.req(':batchUpdate', { method: 'POST', body: { requests: pedidos } });
 
-    // Quais abas estão sem cabeçalho?
-    const ranges = ABAS.map((a) => `ranges=${encodeURIComponent(`${aspas(a)}!A1:A2`)}`).join('&');
+    // Lê a 1ª linha (cabeçalho) de todas as abas
+    const ranges = ABAS.map((a) => `ranges=${encodeURIComponent(`${aspas(a)}!1:1`)}`).join('&');
     const { valueRanges } = await this.req(`/values:batchGet?${ranges}`);
-    const vazias = ABAS.filter((_, i) => !(valueRanges[i].values?.length));
+    const cabecalhos = valueRanges.map((vr) => (vr.values?.[0] ?? []).map((c) => String(c ?? '').trim()));
+    const vazias = ABAS.filter((_, i) => !cabecalhos[i].some(Boolean));
+
+    // Abas antigas ganham, no fim do cabeçalho, as colunas novas do Código M
+    const colunasNovas = ABAS.flatMap((aba, i) => {
+      const cab = cabecalhos[i];
+      if (!cab.some(Boolean)) return [];
+      const faltam = COLUNAS[aba].filter((c) => !cab.includes(c));
+      return faltam.length ? [{ range: `${aspas(aba)}!${letraColuna(cab.length)}1`, values: [faltam] }] : [];
+    });
+    if (colunasNovas.length) {
+      await this.req('/values:batchUpdate', { method: 'POST', body: { valueInputOption: 'RAW', data: colunasNovas } });
+    }
     if (!vazias.length) return false;
 
     const primeiraVez = vazias.includes('Config');
@@ -188,6 +207,16 @@ export class SheetsAdapter {
     await this.req(
       `/values/${encodeURIComponent(`${aspas(aba)}!A1`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
       { method: 'POST', body: { values: [linha] } }
+    );
+  }
+
+  /** Acrescenta várias linhas de uma vez (importações). */
+  async adicionarLinhas(aba, objetos) {
+    if (!objetos.length) return;
+    const cab = (await this.req(`/values/${encodeURIComponent(`${aspas(aba)}!1:1`)}`)).values?.[0] ?? COLUNAS[aba];
+    await this.req(
+      `/values/${encodeURIComponent(`${aspas(aba)}!A1`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+      { method: 'POST', body: { values: objetos.map((o) => objetoParaLinha(cab, o)) } }
     );
   }
 

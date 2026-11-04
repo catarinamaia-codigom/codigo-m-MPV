@@ -53,6 +53,16 @@ export function lerConfig(linhas = []) {
       : ['Prova teórica', 'Prova prática', 'Trabalho oral', 'Seminário', 'Prova integrada', 'Trabalho', 'Outro'],
     atalhosIA: (grupos.atalho_ia ?? []).map((i) => ({ nome: i.chave, prompt: i.valor })),
     formulasNota: mapa('formula_nota'),
+    motivosQuestao: (grupos.motivo_questao ?? []).map((i) => i.chave).filter(Boolean).length
+      ? grupos.motivo_questao.map((i) => i.chave).filter(Boolean)
+      : ['Não sabia o conteúdo', 'Confundi conceitos', 'Li errado / desatenção', 'Esqueci', 'Interpretação do enunciado', 'Necessita aprofundamento'],
+    origensMaterial: ['Minha', 'Turma', 'Professor', 'Livro', 'IA'],
+    notas: {
+      mediaAprovacao: num(mapa('notas').media_aprovacao, 7),
+      mediaFinal: num(mapa('notas').media_final, 5),
+    },
+    retencaoDesejada: Math.min(0.97, Math.max(0.7, num(mapa('metodo').retencao_desejada, 0.9))),
+    cartoesNovosPorDia: num(mapa('metodo').novos_por_dia, 20),
     grupos, // acesso genérico a qualquer grupo novo criado na planilha
   };
 }
@@ -143,6 +153,99 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
     .map((f) => ({ data: normalizarData(f.data), nome: txt(f.nome) }))
     .filter((f) => f.data);
 
+  const duvidas = (abas.Duvidas ?? [])
+    .map((d) => ({
+      id: txt(d.id),
+      criada: normalizarData(d.criada),
+      cadeiraId: txt(d.cadeira_id),
+      assunto: txt(d.assunto),
+      pergunta: txt(d.pergunta),
+      motivo: txt(d.motivo),
+      tentativa: txt(d.tentativa),
+      resposta: txt(d.resposta),
+      fonte: txt(d.fonte),
+      link: txt(d.link),
+      sanada: ['sanada', 'resolvida', 'ok', 'feita'].includes(txt(d.status).toLowerCase()),
+      sanadaEm: normalizarData(d.sanada_em),
+    }))
+    .filter((d) => d.id && d.pergunta)
+    .sort((a, b) => b.criada.localeCompare(a.criada));
+
+  const questoes = (abas.Questoes ?? [])
+    .map((q) => ({
+      id: txt(q.id),
+      data: normalizarData(q.data),
+      cadeiraId: txt(q.cadeira_id),
+      assunto: txt(q.assunto),
+      fonte: txt(q.fonte),
+      resultado: (() => {
+        const r = txt(q.resultado).toLowerCase();
+        return r.startsWith('ac') ? 'Acertou' : r.startsWith('ch') ? 'Chutou' : r.startsWith('er') ? 'Errou' : '';
+      })(),
+      confianca: Math.min(5, Math.max(1, Math.round(num(q.confianca, 3)))),
+      motivos: lista(q.motivos),
+      obs: txt(q.obs),
+    }))
+    .filter((q) => q.id && q.resultado)
+    .sort((a, b) => b.data.localeCompare(a.data));
+
+  const notas = (abas.Notas ?? [])
+    .map((n) => {
+      const vale = num(n.vale, 10) || 10;
+      return {
+        id: txt(n.id),
+        cadeiraId: txt(n.cadeira_id),
+        avaliacaoId: txt(n.avaliacao_id),
+        nome: txt(n.nome),
+        vale,
+        peso: txt(n.peso) === '' ? vale : num(n.peso, vale),
+        nota: txt(n.nota) === '' ? null : num(n.nota, 0),
+        bonus: txt(n.bonus).toLowerCase() === 'sim' || txt(n.bonus).toLowerCase() === 'true',
+        obs: txt(n.obs),
+      };
+    })
+    .filter((n) => n.id && n.nome);
+
+  const materiais = (abas.Materiais ?? [])
+    .map((x) => ({
+      id: txt(x.id),
+      criado: normalizarData(x.criado),
+      cadeiraId: txt(x.cadeira_id),
+      assunto: txt(x.assunto),
+      tipo: txt(x.tipo) || 'Arquivo',
+      titulo: txt(x.titulo),
+      link: txt(x.link),
+      origem: txt(x.origem) || 'Minha',
+      copiado: bool(x.copiado),
+      obs: txt(x.obs),
+    }))
+    .filter((x) => x.id && (x.titulo || x.link))
+    .sort((a, b) => b.criado.localeCompare(a.criado));
+
+  const cartoes = (abas.Cartoes ?? [])
+    .map((c) => ({
+      id: txt(c.id),
+      criado: normalizarData(c.criado),
+      cadeiraId: txt(c.cadeira_id),
+      assunto: txt(c.assunto),
+      frente: txt(c.frente),
+      verso: txt(c.verso),
+      fonte: txt(c.fonte),
+      validado: !['automatico', 'automático', 'ia', 'anki'].includes(txt(c.origem).toLowerCase()),
+      origem: txt(c.origem) || 'Validado',
+      vence: normalizarData(c.vence),
+      estabilidade: num(c.estabilidade, 0),
+      dificuldade: num(c.dificuldade, 0),
+      revisoes: num(c.revisoes, 0),
+      lapsos: num(c.lapsos, 0),
+      ultima: normalizarData(c.ultima),
+    }))
+    .filter((c) => c.id && c.frente);
+
+  const revisoes = (abas.Revisoes ?? [])
+    .map((r) => ({ data: normalizarData(r.data), cartaoId: txt(r.cartao_id), nota: num(r.nota, 0), intervalo: num(r.intervalo, 0) }))
+    .filter((r) => r.data && r.cartaoId && r.nota >= 1);
+
   const visivel = (x) => turmaVisivel(x.turma, config.turmasVisiveis);
 
   return {
@@ -157,5 +260,11 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
     estudos,
     pendencias,
     feriados,
+    duvidas,
+    questoes,
+    notas,
+    materiais,
+    cartoes,
+    revisoes,
   };
 }

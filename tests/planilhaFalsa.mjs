@@ -75,7 +75,7 @@ export class PlanilhaFalsa {
       const append = caminho.match(/^\/values\/(.+):append$/);
       if (append) {
         const { aba } = this.intervalo(append[1]);
-        this.aba(aba).valores.push(dados.values[0].map(String));
+        for (const linha of dados.values) this.aba(aba).valores.push(linha.map(String));
         return resposta(200, {});
       }
       const get = caminho.match(/^\/values\/(.+)$/);

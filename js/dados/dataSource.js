@@ -33,7 +33,7 @@ export async function carregar() {
   adaptador = json;
   if (google.configurado() && google.conectado()) {
     try {
-      planilhaPreenchida = await planilha.garantirEstrutura(async () => montarSemente(await json.lerAbas()));
+      planilhaPreenchida = await planilha.garantirEstrutura(async () => montarSemente(await json.lerOriginal()));
       abas = await planilha.lerAbas();
       adaptador = planilha;
     } catch (erro) {
@@ -62,20 +62,30 @@ export const acabouDePreencher = () => planilhaPreenchida;
 export const linkPlanilha = () => (GOOGLE.planilhaId ? planilha.url : '');
 
 /** Nova linha numa aba (ex.: adicionar('Avaliacoes', {...})). */
-export async function adicionar(aba, objeto) {
+export async function adicionar(aba, objeto, { silencioso = false } = {}) {
   await adaptador.adicionarLinha(aba, objeto);
+  if (!silencioso) avisarMudanca();
+}
+
+/** Várias linhas novas numa aba, numa só gravação (importações). */
+export async function adicionarVarias(aba, objetos) {
+  await adaptador.adicionarLinhas(aba, objetos);
   avisarMudanca();
 }
 
 /** Altera campos de uma linha pelo id (ex.: atualizar('Estudos', 'E003', {feito: true})). */
-export async function atualizar(aba, id, campos) {
+export async function atualizar(aba, id, campos, { silencioso = false } = {}) {
   await adaptador.atualizarLinha(aba, id, campos);
-  avisarMudanca();
+  if (!silencioso) avisarMudanca();
 }
 
 /** Gera um id curto e único para novas linhas (ex.: "AV-lq3k9x"). */
-export const novoId = (prefixo) => `${prefixo}-${Date.now().toString(36)}`;
+let ultimoId = 0;
+export const novoId = (prefixo) => {
+  ultimoId = Math.max(Date.now(), ultimoId + 1);
+  return `${prefixo}-${ultimoId.toString(36)}`;
+};
 
-function avisarMudanca() {
+export function avisarMudanca() {
   window.dispatchEvent(new CustomEvent('codigom:dados-mudaram'));
 }
