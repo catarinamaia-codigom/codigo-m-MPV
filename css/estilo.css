@@ -1104,3 +1104,60 @@ details[open] > summary .seta-recolher { transform: rotate(90deg); }
   .av-tags:empty { display: none; }
 }
 .linha-avaliacoes li > span:nth-child(2) { display: grid; grid-template-columns: minmax(0, 1fr); flex: 1 1 0; }
+
+/* ══════════════════════════════════════════════════════════════
+   v3.3 — paleta menos avermelhada: vidro neutro em cinza-grafite,
+   vermelho só como acento (botões principais, ativo, alertas).
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --fundo-app: #ECEDEF;
+  --grafite: #2B2D33;
+  --vermelho-suave: rgba(43, 45, 51, 0.06);
+  --vermelho-borda: rgba(43, 45, 51, 0.16);
+  --linha: rgba(43, 45, 51, 0.09);
+  --neutro: rgba(43, 45, 51, 0.06);
+  --neutro-borda: rgba(43, 45, 51, 0.15);
+  --sombra: 0 24px 48px -30px rgba(30, 32, 40, 0.4);
+  --sombra-pop: 0 30px 70px -24px rgba(30, 32, 40, 0.45);
+  --orb: 0.14;
+}
+.orbs i:nth-child(1) { background: #3A3D46; }
+.orbs i:nth-child(2) { background: #A3A8B2; opacity: calc(var(--orb) * 1.1); }
+.orbs i:nth-child(3) { background: #C8102E; opacity: calc(var(--orb) * 0.45); }
+.modal-fundo { background: rgba(25, 27, 33, 0.25); }
+
+/* superfícies que eram rosadas ficam neutras */
+.faixa-simulacao { background: rgba(255, 255, 255, 0.6); color: var(--grafite); border-color: rgba(43, 45, 51, 0.12); }
+.faixa-simulacao b { color: var(--vermelho); }
+.kpi-alerta { background: var(--vidro); border-color: var(--vidro-borda); box-shadow: inset 3px 0 0 var(--vermelho), inset 0 1px 0 var(--vidro-brilho), var(--sombra); }
+.sugestoes li.sug-avaliacao { background: rgba(255, 255, 255, 0.62); border-color: rgba(255, 255, 255, 0.85); box-shadow: inset 3px 0 0 var(--vermelho); }
+.btn-mais, .btn-novo { background: rgba(255, 255, 255, 0.7); border-color: rgba(43, 45, 51, 0.16); color: var(--grafite); }
+.btn-mais:hover, .btn-novo:hover { background: var(--grafite); border-color: var(--grafite); color: #fff; }
+.btn-abrir { background: rgba(255, 255, 255, 0.7); border-color: rgba(43, 45, 51, 0.16); color: var(--grafite); }
+.btn-abrir:hover { background: var(--grafite); color: #fff; }
+.campo-arquivo { background: rgba(255, 255, 255, 0.5); border-color: rgba(43, 45, 51, 0.2); }
+.check-redondo .caixa, .agenda .caixa { background: rgba(255, 255, 255, 0.7); border-color: rgba(43, 45, 51, 0.25); }
+.cc-periodo { background: rgba(43, 45, 51, 0.07); color: var(--grafite); }
+.contagem { background: rgba(43, 45, 51, 0.06); color: var(--grafite); }
+.linha-avaliacoes li.urgente .contagem, .lista-avaliacoes li.urgente .contagem { background: var(--vermelho); color: #fff; }
+.agenda .ag-av { background: rgba(255, 255, 255, 0.55); box-shadow: inset 3px 0 0 var(--vermelho); }
+.entrada-sim { background: rgba(255, 255, 255, 0.7); border-color: rgba(43, 45, 51, 0.25); }
+.material-icone { background: rgba(43, 45, 51, 0.07); color: var(--grafite); }
+.tag-alerta { background: rgba(200, 16, 46, 0.09); color: var(--vermelho-escuro); }
+.selo-av { background: rgba(43, 45, 51, 0.07); color: var(--grafite); }
+.selo-av.perto { background: var(--vermelho); color: #fff; }
+.btn:hover, .btn-mini:hover, .btn-icone:hover { background: var(--vidro-forte); border-color: rgba(43, 45, 51, 0.2); color: var(--grafite); }
+.btn-principal:hover, .btn.btn-google:hover { color: #fff; }
+#menu a.ativo { color: var(--grafite); }
+.chip.ativo { color: var(--grafite); }
+.sm-dia.sel { background: var(--grafite); border-color: var(--grafite); }
+.sm-dia.hoje:not(.sel) b { color: var(--vermelho); }
+.p-estudo { background: #8A8F99; }
+.ev-estudo { background: rgba(255, 255, 255, 0.7); border-color: rgba(43, 45, 51, 0.16); color: var(--grafite); }
+.evento.ev-estudo { border-left-color: var(--grafite); }
+.registrar-menu button:hover { background: rgba(43, 45, 51, 0.06); color: var(--grafite); }
+.opcao input:checked + span { background: var(--grafite); border-color: var(--grafite); }
+.prioridade.p-média, .prioridade.p-media { background: #8A8F99; }
+.motivo-barra span { background: #8A8F99; }
+.futuro .gb-barra { background: #9AA0AA; }
+.revisao-cartao { border-color: var(--vidro-borda); }
