@@ -39,6 +39,10 @@ const MENU = [
 const TELAS = MENU.filter((i) => i.rota);
 const OCULTAS = { busca: { rota: 'busca', nome: 'Busca', icone: 'inicio', tela: busca } };
 
+// ?demo no endereço abre a demonstração (dados de exemplo, nada é salvo)
+const DEMO = new URLSearchParams(location.search).has('demo');
+const elCapa = document.getElementById('capa');
+let comecou = false;
 const elTela = document.getElementById('tela');
 const elMenu = document.getElementById('menu');
 let modelo;
@@ -120,13 +124,16 @@ function montarAvisos() {
   document.getElementById('entrar')?.addEventListener('click', entrarComGoogle);
   document.getElementById('sair')?.addEventListener('click', async () => {
     google.sair();
-    await recarregar();
-    aviso('Você saiu. Mostrando o modo simulação.');
+    if (DEMO) {
+      await recarregar();
+      return;
+    }
+    mostrarCapa('Você saiu.');
   });
 
   const faixa = document.getElementById('faixa-simulacao');
   const problema = mensagemCarga();
-  faixa.hidden = !simulacao && !problema;
+  faixa.hidden = !problema && !(simulacao && DEMO);
   faixa.classList.toggle('faixa-erro', Boolean(problema));
   if (problema) {
     faixa.innerHTML = `<b>Não consegui abrir a planilha:</b> ${esc(problema)} Mostrando o modo simulação.`;
@@ -138,6 +145,31 @@ function montarAvisos() {
   }
 }
 
+/** Capa: primeira tela, pede o login com o Google. */
+function mostrarCapa(mensagem = '') {
+  document.body.classList.add('na-capa');
+  elCapa.hidden = false;
+  const h = new Date().getHours();
+  elCapa.innerHTML = `
+    <div class="capa-cartao">
+      <span class="capa-marca">M</span>
+      <h1>Código <b>M</b></h1>
+      <p class="capa-sub">Seu estúdio de Medicina</p>
+      <p class="capa-texto">${h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'}. Entre com a sua conta Google para abrir suas aulas, dúvidas, revisões e materiais.</p>
+      ${mensagem ? `<p class="capa-aviso">${esc(mensagem)}</p>` : ''}
+      <button class="btn btn-principal capa-entrar" id="capa-entrar">${icone('pessoa')} Entrar com Google</button>
+      <p class="capa-nota">Seus dados ficam na sua planilha e no seu Drive. O login vale nesta aba do navegador.</p>
+    </div>`;
+  document.getElementById('capa-entrar').addEventListener('click', entrarComGoogle);
+  google.prepararLogin().catch(() => {});
+}
+
+function esconderCapa() {
+  document.body.classList.remove('na-capa');
+  elCapa.hidden = true;
+  elCapa.innerHTML = '';
+}
+
 async function entrarComGoogle() {
   try {
     await google.entrar();
@@ -145,10 +177,13 @@ async function entrarComGoogle() {
     aviso(erro.message);
     return;
   }
+  esconderCapa();
   elTela.innerHTML = '<p class="carregando">Abrindo sua planilha…</p>';
-  await recarregar();
+  if (!comecou) await comecar();
+  else await recarregar();
+  if (emSimulacao()) return; // a capa já voltou com o motivo
   if (acabouDePreencher()) aviso('Planilha preparada e preenchida com o horário do 1M.');
-  else if (!emSimulacao()) aviso('Planilha conectada.');
+  else aviso('Planilha conectada.');
 }
 
 /** Lê os dados de novo (da planilha ou do JSON) e redesenha a tela atual. */
@@ -158,6 +193,11 @@ async function recarregar({ rolarTopo = true } = {}) {
   } catch (erro) {
     console.error(erro);
     aviso(`Erro ao carregar os dados: ${erro.message}`);
+    return;
+  }
+  if (emSimulacao() && !DEMO) {
+    google.sair();
+    mostrarCapa(mensagemCarga() || 'Entre de novo para continuar.');
     return;
   }
   montarAvisos();
@@ -201,14 +241,19 @@ function navegar({ rolarTopo = true } = {}) {
   if (rolarTopo) window.scrollTo(0, 0);
 }
 
-async function iniciar() {
-  montarBarra();
-  if (google.conectado()) elTela.innerHTML = '<p class="carregando">Abrindo sua planilha…</p>';
+async function comecar() {
+  comecou = true;
   try {
     modelo = await carregar();
   } catch (erro) {
     console.error(erro);
     elTela.innerHTML = `<div class="erro"><h1>Não foi possível carregar os dados</h1><p>${esc(erro.message)}</p></div>`;
+    return;
+  }
+  if (emSimulacao() && !DEMO) {
+    google.sair();
+    mostrarCapa(mensagemCarga() || 'Entre com Google para continuar.');
+    comecou = false;
     return;
   }
   montarAvisos();
@@ -220,12 +265,22 @@ async function iniciar() {
       profundidade += 1;
       history.replaceState({ passo: profundidade }, '');
     }
-    navegar();
+    if (modelo) navegar();
   });
   // Depois de salvar algo, relê os dados sem pular para o topo
   window.addEventListener('codigom:dados-mudaram', () => recarregar({ rolarTopo: false }));
   navegar();
   google.prepararLogin().catch(() => {});
+}
+
+function iniciar() {
+  montarBarra();
+  if (!DEMO && !google.conectado()) {
+    mostrarCapa();
+    return;
+  }
+  if (google.conectado()) elTela.innerHTML = '<p class="carregando">Abrindo sua planilha…</p>';
+  comecar();
 }
 
 iniciar();

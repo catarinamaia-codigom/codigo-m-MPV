@@ -24,7 +24,8 @@ Site estático (HTML, CSS e JavaScript puros, sem build), publicado de graça no
   final (média 7 / final 5, configurável) e **simulação** que não grava.
 - **Materiais**: links por cadeira e assunto, ícone por tipo, material da turma com check "copiado".
 - **Configurações**: situação de cada integração e importação do backup do Código M antigo (ChatGPT).
-- **Modo simulação** (sem login): dá para testar tudo; o que for criado some ao recarregar.
+- **Capa com login**: o site abre numa capa que pede **Entrar com Google**; sem login não mostra dados.
+- **Demonstração**: acrescente `?demo` ao endereço para abrir com dados de exemplo (nada é salvo).
 - Com **Entrar com Google**, tudo grava na planilha "Código M - Dados". As abas novas são criadas
   sozinhas no próximo login (veja `docs/PLANILHA.md`).
 
