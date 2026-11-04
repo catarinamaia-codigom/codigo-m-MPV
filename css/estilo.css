@@ -875,3 +875,110 @@ a.kpi:hover { border-color: var(--vermelho-borda); text-decoration: none; transf
 .lista-simples li > .meta { flex: 0 1 auto; margin: 0; text-align: right; }
 .lista-simples.empilhada li { display: grid; gap: 1px; }
 .lista-simples.empilhada li > .meta { text-align: left; }
+
+/* ══════════════════════════════════════════════════════════════
+   v3.1 — VIDRO (mesma direção do painel do Estúdio IA), nas cores
+   do Código M: painéis translúcidos e arredondados sobre fundo calmo,
+   luzes suaves em vermelho, letra do sistema da Apple.
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --fonte: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --fundo-app: #F1EEEE;
+  --fundo: rgba(255, 255, 255, 0.5);
+  --superficie: rgba(255, 255, 255, 0.62);
+  --vidro: rgba(255, 255, 255, 0.58);
+  --vidro-forte: rgba(255, 255, 255, 0.86);
+  --vidro-fraco: rgba(255, 255, 255, 0.36);
+  --vidro-borda: rgba(255, 255, 255, 0.85);
+  --vidro-brilho: rgba(255, 255, 255, 0.92);
+  --linha: rgba(60, 24, 30, 0.09);
+  --neutro: rgba(60, 24, 30, 0.06);
+  --neutro-borda: rgba(60, 24, 30, 0.14);
+  --sombra: 0 24px 48px -30px rgba(70, 20, 30, 0.38);
+  --sombra-pop: 0 30px 70px -24px rgba(70, 20, 30, 0.45);
+  --vermelho-suave: rgba(200, 16, 46, 0.08);
+  --vermelho-borda: rgba(200, 16, 46, 0.24);
+  --verde-suave: rgba(47, 125, 79, 0.1);
+  --amarelo-suave: rgba(183, 121, 31, 0.11);
+  --raio: 16px;
+  --orb: 0.2;
+}
+body { background: var(--fundo-app); -webkit-font-smoothing: antialiased; }
+
+/* luzes de fundo em vermelho Código M */
+.orbs { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.orbs i { position: absolute; width: 44vw; height: 44vw; max-width: 620px; max-height: 620px; border-radius: 50%; filter: blur(120px); opacity: var(--orb); }
+.orbs i:nth-child(1) { top: -14vw; right: 12vw; background: #C8102E; }
+.orbs i:nth-child(2) { top: 34vh; right: -12vw; background: #F28C9B; opacity: calc(var(--orb) * 0.9); }
+.orbs i:nth-child(3) { bottom: -18vw; left: 6vw; background: #E2384F; opacity: calc(var(--orb) * 0.7); }
+
+/* vidro: um só conjunto de regras para tudo que flutua */
+.lateral, .barra, .cartao, .kpi, .duvida, .lista-materiais, .revisao-cartao, .btn, .btn-voltar, .busca input,
+.filtro-select, .filtro-texto, .chips, .registrar-menu, .btn-nota, .btn-resultado, .lote-campos select, .lote-campos input {
+  background: var(--vidro);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  backdrop-filter: blur(26px) saturate(160%);
+  border: 1px solid var(--vidro-borda);
+  box-shadow: inset 0 1px 0 var(--vidro-brilho), var(--sombra);
+}
+.btn, .btn-voltar, .busca input, .filtro-select, .filtro-texto, .chips, .btn-resultado, .lote-campos select, .lote-campos input {
+  box-shadow: inset 0 1px 0 var(--vidro-brilho), 0 6px 16px -12px rgba(70, 20, 30, 0.35);
+}
+.btn-principal { background: var(--vermelho); border-color: rgba(255, 255, 255, 0.35); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 10px 22px -12px rgba(200, 16, 46, 0.7); }
+.btn-principal:hover { background: var(--vermelho-escuro); }
+.btn:hover, .btn-voltar:hover { background: var(--vidro-forte); }
+.btn-principal:hover { background: var(--vermelho-escuro); color: #fff; }
+.chip.ativo { background: var(--vidro-forte); }
+.kpi-alerta { background: linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(253, 236, 238, 0.7)); border-color: rgba(255, 255, 255, 0.85); }
+
+/* Moldura: lateral e barra flutuando */
+.lateral { top: 12px; bottom: 12px; left: 12px; width: var(--lateral); border-radius: 22px; }
+.principal { margin-left: calc(var(--lateral) + 24px); padding-right: 12px; }
+.barra { top: 12px; margin: 12px 0 0; border-radius: 18px; padding: 7px 10px 7px 14px; }
+.faixa-simulacao { margin: 8px 0 0; border-radius: 12px; border: 1px solid var(--vermelho-borda); background: rgba(253, 236, 238, 0.7); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+main { padding: 16px 4px 40px; }
+#menu a { border-radius: 12px; }
+#menu a:hover { background: rgba(255, 255, 255, 0.6); }
+#menu a.ativo { background: var(--vidro-forte); color: var(--vermelho-escuro); box-shadow: 0 1px 2px rgba(70, 20, 30, 0.1); }
+#menu a.ativo::before { display: none; }
+#menu a.ativo .ic { color: var(--vermelho); }
+.lateral-rodape { border-top-color: var(--linha); }
+.menu-rodape { border-top-color: var(--linha) !important; }
+
+/* Cartões */
+.cartao { border-radius: var(--raio); }
+a.cartao-cadeira:hover { background: var(--vidro-forte); }
+.sugestoes li { background: rgba(255, 255, 255, 0.5); border-color: rgba(255, 255, 255, 0.8); }
+.sugestoes li.sug-avaliacao { background: rgba(253, 236, 238, 0.75); border-color: var(--vermelho-borda); }
+.duvida-lados > div { background: rgba(255, 255, 255, 0.55); }
+.duvida-lados > div:last-child { background: rgba(232, 244, 236, 0.75); }
+.nota-calculo, .formulario-intro { background: rgba(255, 255, 255, 0.55); }
+.lista-duvidas.compacta .duvida { background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-width: 1px 0 0; border-color: var(--linha); }
+.lista-duvidas.compacta .duvida:first-child { border-top: 0; }
+.cartao .lista-materiais { background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.contagem { background: rgba(200, 16, 46, 0.09); }
+.tabela th { border-bottom-color: var(--linha); }
+.evento.ev-aula, .ev-aula { background: rgba(255, 255, 255, 0.6); }
+.dia, .mes-dia { background: var(--vidro); -webkit-backdrop-filter: blur(20px) saturate(150%); backdrop-filter: blur(20px) saturate(150%); }
+.mes { background: rgba(255, 255, 255, 0.5); }
+
+/* Janela (modal) e menus em vidro forte */
+.modal-fundo { background: rgba(40, 18, 22, 0.22); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.modal { background: rgba(255, 255, 255, 0.88); -webkit-backdrop-filter: blur(30px) saturate(170%); backdrop-filter: blur(30px) saturate(170%); border: 1px solid var(--vidro-borda); border-top: 4px solid var(--vermelho); border-radius: 20px; box-shadow: var(--sombra-pop); }
+.registrar-menu { background: rgba(255, 255, 255, 0.86); box-shadow: var(--sombra-pop); border-radius: 16px; }
+.campo input, .campo textarea, .campo select, .opcao span { background: rgba(255, 255, 255, 0.8); }
+.aviso { border-radius: 14px; }
+
+@media (max-width: 860px) {
+  .lateral { top: 8px; bottom: 8px; left: 8px; transform: translateX(calc(-100% - 16px)); }
+  body.menu-aberto .lateral { transform: none; }
+  .principal { margin-left: 0; padding: 0 8px; }
+  .barra { top: 8px; margin-top: 8px; border-radius: 16px; }
+  main { padding: 12px 2px 40px; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root { --vidro: var(--vidro-forte); --superficie: #fff; }
+}
+.btn.btn-google { background: var(--vermelho); color: #fff; border-color: rgba(255, 255, 255, 0.35); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 10px 22px -12px rgba(200, 16, 46, 0.7); }
+.btn.btn-google:hover { background: var(--vermelho-escuro); color: #fff; }
+:root { --orb: 0.16; }
