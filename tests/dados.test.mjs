@@ -20,7 +20,7 @@ test('datas: aceita formato da planilha (dd/mm/aaaa) e ISO', () => {
 test('nome de arquivo segue o padrão e tira acentos', () => {
   assert.equal(
     nomeArquivo({ periodo: '1M', tipo: 'Resumo', cadeira: 'Bioquímica', assunto: 'Glicólise', data: '2026-11-03', aluna: 'Catarina', ext: 'pdf' }),
-    '1M - Resumo - Bioquimica - Glicolise - 03-11-2026 - Catarina.pdf'
+    '[1M] [Resumo] [Bioquimica] [Glicolise] [03-11-2026] [Catarina].pdf'
   );
 });
 

@@ -25,17 +25,17 @@ export function lista(valor) {
 }
 
 /**
- * Padrão de nome de arquivo do Código M:
- * "1M - Tipo - Cadeira - Assunto - dd-mm-aaaa - Catarina.ext" (sem acentos).
+ * Padrão de nome de arquivo do Código M (regra dos colchetes, DC-26-004):
+ * "[1M] [Tipo] [Cadeira] [Assunto] [dd-mm-aaaa] [Catarina].ext", sem acentos.
+ * Cada colchete é uma pista de onde o arquivo deve ficar.
  */
 export function nomeArquivo({ periodo, tipo, cadeira, assunto, data, aluna, ext = 'pdf' }) {
   const limpar = (s) =>
     semAcentos(s)
-      .replace(/[\\/:*?"<>|]/g, ' ') // caracteres proibidos em nomes de arquivo
-      .replace(/\s+-\s+/g, ' ')
+      .replace(/[\\/:*?"<>|\[\]]/g, ' ') // proibidos em nomes de arquivo e os próprios colchetes
       .replace(/\s+/g, ' ')
       .trim();
   const [a, m, d] = String(data).split('-');
-  const partes = [periodo, tipo, cadeira, assunto, `${d}-${m}-${a}`, aluna].map(limpar);
-  return `${partes.join(' - ')}.${limpar(ext).replace(/^\./, '')}`;
+  const partes = [periodo, tipo, cadeira, assunto, `${d}-${m}-${a}`, aluna].map(limpar).filter(Boolean);
+  return `${partes.map((p) => `[${p}]`).join(' ')}.${limpar(ext).replace(/^\./, '')}`;
 }

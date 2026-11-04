@@ -73,4 +73,4 @@ docs/PLANILHA.md           abas e colunas da planilha / do JSON
 - O que muda com frequência (prompts, atalhos, fórmulas de nota, perfil do cronograma, tipos de material,
   motivos de dúvida, regras de sugestão) fica na aba **Config** da planilha, não no código.
 - Nada importante guardado só no navegador.
-- Nome de arquivo: `1M - Tipo - Cadeira - Assunto - dd-mm-aaaa - Catarina.ext`, sem acentos.
+- Nome de arquivo (regra dos colchetes, DC-26-004): `[1M] [Tipo] [Cadeira] [Assunto] [dd-mm-aaaa] [Catarina].ext`, sem acentos.
