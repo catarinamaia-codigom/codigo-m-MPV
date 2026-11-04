@@ -10,6 +10,7 @@ import { nomeCadeira } from '../dados/consultas.js';
 import { revisar, previa } from '../regras/fsrs.js';
 import { novoCartao, opcoesCadeira } from './formularios.js';
 import { mesmoAssunto } from '../regras/dominio.js';
+import { mostrarImagens } from '../dados/drive.js';
 
 const estado = { cadeira: '', assunto: '', busca: '' };
 let sessao = null; // { fila: [ids], i, mostrando, feitos }
@@ -85,7 +86,8 @@ function telaRevisao(el, m) {
       </div>
       <div class="revisao-cartao">
         <p class="revisao-frente">${esc(c.frente)}</p>
-        ${sessao.mostrando ? `<hr><p class="revisao-verso">${esc(c.verso)}</p>${c.fonte ? `<p class="meta">Fonte: ${esc(c.fonte)}</p>` : ''}` : ''}
+        ${c.imagemFrente ? `<img class="revisao-imagem" data-imagem-drive="${esc(c.imagemFrente)}" alt="Imagem da frente">` : ''}
+        ${sessao.mostrando ? `<hr><p class="revisao-verso">${esc(c.verso)}</p>${c.imagemVerso ? `<img class="revisao-imagem" data-imagem-drive="${esc(c.imagemVerso)}" alt="Imagem do verso">` : ''}${c.fonte ? `<p class="meta">Fonte: ${esc(c.fonte)}</p>` : ''}` : ''}
       </div>
       <div class="revisao-acoes">
         ${sessao.mostrando
@@ -95,6 +97,7 @@ function telaRevisao(el, m) {
       <p class="nota">Tente responder em voz alta antes de virar. Atalhos: espaço vira; 1 Errei · 2 Difícil · 3 Bom · 4 Fácil.</p>
     </div>`;
 
+  mostrarImagens(el);
   const responder = (nota) => {
     const r = revisar(c, nota, dias, m.config.retencaoDesejada);
     const vence = somarDias(m.hoje, r.intervalo);

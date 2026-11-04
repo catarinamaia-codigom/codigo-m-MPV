@@ -10,17 +10,17 @@ export const COLUNAS = {
   Config: ['grupo', 'chave', 'valor', 'obs'],
   Modulos: ['id', 'periodo', 'nome', 'ordem'],
   Cadeiras: ['id', 'modulo_id', 'nome', 'ordem'],
-  Aulas: ['id', 'data', 'inicio', 'fim', 'cadeira_id', 'assunto', 'tipo', 'turma', 'local', 'professor'],
-  Avaliacoes: ['id', 'data', 'hora', 'fim', 'cadeira_id', 'titulo', 'tipo', 'conteudo', 'turma', 'local', 'obs'],
+  Aulas: ['id', 'data', 'inicio', 'fim', 'cadeira_id', 'assunto', 'tipo', 'turma', 'local', 'professor', 'aconteceu', 'presente'],
+  Avaliacoes: ['id', 'data', 'hora', 'fim', 'cadeira_id', 'titulo', 'tipo', 'conteudo', 'turma', 'local', 'obs', 'link', 'vale', 'nota', 'entrega'],
   Estudos: ['id', 'data', 'inicio', 'fim', 'cadeira_id', 'assunto', 'atividade', 'feito'],
   Pendencias: ['id', 'descricao', 'cadeira_id', 'prazo', 'status', 'prioridade'],
   Feriados: ['data', 'nome'],
   // Etapa 3 — estudo ativo
-  Duvidas: ['id', 'criada', 'cadeira_id', 'assunto', 'pergunta', 'motivo', 'tentativa', 'resposta', 'fonte', 'link', 'status', 'sanada_em'],
-  Questoes: ['id', 'data', 'cadeira_id', 'assunto', 'fonte', 'resultado', 'confianca', 'motivos', 'obs'],
+  Duvidas: ['id', 'criada', 'cadeira_id', 'assunto', 'pergunta', 'motivo', 'tentativa', 'resposta', 'fonte', 'link', 'status', 'sanada_em', 'imagem'],
+  Questoes: ['id', 'data', 'cadeira_id', 'assunto', 'fonte', 'resultado', 'confianca', 'motivos', 'obs', 'imagem'],
   Notas: ['id', 'cadeira_id', 'avaliacao_id', 'nome', 'vale', 'peso', 'nota', 'bonus', 'obs'],
-  Materiais: ['id', 'criado', 'cadeira_id', 'assunto', 'tipo', 'titulo', 'link', 'origem', 'copiado', 'obs'],
-  Cartoes: ['id', 'criado', 'cadeira_id', 'assunto', 'frente', 'verso', 'fonte', 'origem', 'vence', 'estabilidade', 'dificuldade', 'revisoes', 'lapsos', 'ultima'],
+  Materiais: ['id', 'criado', 'cadeira_id', 'assunto', 'tipo', 'titulo', 'link', 'origem', 'copiado', 'obs', 'drive_id', 'hash', 'nome_original'],
+  Cartoes: ['id', 'criado', 'cadeira_id', 'assunto', 'frente', 'verso', 'fonte', 'origem', 'vence', 'estabilidade', 'dificuldade', 'revisoes', 'lapsos', 'ultima', 'imagem_frente', 'imagem_verso'],
   Revisoes: ['data', 'cartao_id', 'nota', 'intervalo'],
 };
 export const ABAS = Object.keys(COLUNAS);

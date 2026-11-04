@@ -105,19 +105,25 @@
   },
   {
    "grupo": "tipo_material",
+   "chave": "Infográfico",
+   "valor": "infografico",
+   "obs": ""
+  },
+  {
+   "grupo": "tipo_material",
    "chave": "Flashcards",
    "valor": "flashcard",
    "obs": ""
   },
   {
    "grupo": "tipo_material",
-   "chave": "Questoes",
+   "chave": "Questões",
    "valor": "questoes",
    "obs": ""
   },
   {
    "grupo": "tipo_material",
-   "chave": "Video",
+   "chave": "Vídeo",
    "valor": "video",
    "obs": ""
   },
@@ -129,7 +135,7 @@
   },
   {
    "grupo": "tipo_material",
-   "chave": "Anotacao",
+   "chave": "Anotação",
    "valor": "anotacao",
    "obs": ""
   },
@@ -3557,6 +3563,26 @@
    "cadeira_id": "anatomia",
    "assunto": "Músculos dos membros inferiores",
    "atividade": "Simulado de peças para a 2ª Avaliação (exemplo)",
+   "feito": "FALSE"
+  },
+  {
+   "id": "E-ex-sem",
+   "data": "",
+   "inicio": "",
+   "fim": "",
+   "cadeira_id": "histologia",
+   "assunto": "Tecido cartilaginoso",
+   "atividade": "Assistir à videoaula de cartilagem (exemplo, sem data)",
+   "feito": "FALSE"
+  },
+  {
+   "id": "E-ex-sem2",
+   "data": "",
+   "inicio": "",
+   "fim": "",
+   "cadeira_id": "bioquimica",
+   "assunto": "Metabolismo do cálcio e fosfato",
+   "atividade": "Infográfico PTH × calcitonina (exemplo, sem data)",
    "feito": "FALSE"
   }
  ],

@@ -8,28 +8,31 @@ import { icone } from '../ui/icones.js';
 import { chips, seletorCadeira, ligarFiltros, vazio, aviso, casa, kpi } from '../ui/componentes.js';
 import { atualizar } from '../dados/dataSource.js';
 import { nomeCadeira } from '../dados/consultas.js';
-import { novoMaterial } from './formularios.js';
+import { novoMaterial, editarMaterial } from './formularios.js';
 
-const estado = { cadeira: '', origem: 'todas', busca: '' };
+const estado = { cadeira: '', origem: 'todas', busca: '', tipo: '' };
 
 /** Ícone do tipo de material (pela aba Config). */
 export const iconeTipo = (m, tipo) => m.config.tiposMaterial.find((t) => t.nome === tipo)?.icone ?? 'arquivo';
 
-/** Linha de um material (também usada na página do assunto). */
-export function linhaMaterial(m, x, { mostrarCadeira = true } = {}) {
+/** Linha de um material (também usada nas páginas da cadeira e do assunto). */
+export function linhaMaterial(m, x, { mostrarCadeira = true, mostrarAssunto = false } = {}) {
+  const onde = [mostrarCadeira ? nomeCadeira(m, x.cadeiraId) : '', (mostrarCadeira || mostrarAssunto) ? x.assunto || 'sem assunto' : ''].filter(Boolean).join(' · ');
   return `
     <li class="material">
       <span class="material-icone">${icone(iconeTipo(m, x.tipo))}</span>
       <div class="material-texto">
         ${x.link ? `<a href="${esc(x.link)}" target="_blank" rel="noopener" class="t-forte">${esc(x.titulo || x.link)}</a>` : `<span class="t-forte">${esc(x.titulo)}</span>`}
-        <p class="meta">${esc(x.tipo)}${mostrarCadeira ? ` · ${esc(nomeCadeira(m, x.cadeiraId))}${x.assunto ? ` · ${esc(x.assunto)}` : ''}` : ''}${x.criado ? ` · ${formatoCurto(x.criado)}` : ''}${x.obs ? ` · ${esc(x.obs)}` : ''}</p>
+        <p class="meta">${esc(x.tipo)}${onde ? ` · ${esc(onde)}` : ''}${x.criado ? ` · ${formatoCurto(x.criado)}` : ''}${x.obs ? ` · ${esc(x.obs)}` : ''}</p>
       </div>
+      ${x.driveId ? `<span class="tag tag-ok" title="Guardado no Drive">${icone('nuvem', 'ic-mini')} Drive</span>` : ''}
       <span class="tag ${x.origem === 'Turma' ? 'tag-turma' : ''}">${esc(x.origem)}</span>
       ${x.origem === 'Turma' ? `<label class="copiado" title="Já copiei para a minha pasta"><input type="checkbox" data-copiado="${esc(x.id)}" ${x.copiado ? 'checked' : ''}> copiado</label>` : ''}
+      <button class="btn-mini" data-editar-material="${esc(x.id)}" title="Editar ou mudar de lugar" aria-label="Editar ${esc(x.titulo)}">${icone('anotacao', 'ic-mini')}</button>
     </li>`;
 }
 
-export function ligarMateriais(el) {
+export function ligarMateriais(el, m) {
   el.querySelectorAll('[data-copiado]').forEach((cb) =>
     cb.addEventListener('change', async () => {
       cb.disabled = true;
@@ -42,6 +45,7 @@ export function ligarMateriais(el) {
       }
     })
   );
+  if (m) el.querySelectorAll('[data-editar-material]').forEach((b) => b.addEventListener('click', () => editarMaterial(m, m.materiais.find((x) => x.id === b.dataset.editarMaterial))));
 }
 
 export function render(el, m) {
@@ -50,6 +54,7 @@ export function render(el, m) {
     (x) =>
       (!estado.cadeira || x.cadeiraId === estado.cadeira) &&
       (estado.origem === 'todas' || (estado.origem === 'minhas') === (x.origem !== 'Turma')) &&
+      (!estado.tipo || x.tipo === estado.tipo) &&
       casa(`${x.titulo} ${x.assunto} ${x.tipo} ${x.obs}`, estado.busca)
   );
   // Agrupa por cadeira > assunto
@@ -70,10 +75,11 @@ export function render(el, m) {
       ${kpi({ rotulo: 'Materiais', valor: m.materiais.length })}
       ${kpi({ rotulo: 'Meus', valor: m.materiais.filter((x) => x.origem !== 'Turma').length })}
       ${kpi({ rotulo: 'Da turma ainda não copiados', valor: turmaPendente, tom: turmaPendente ? 'alerta' : '' })}
-      <div class="kpi kpi-nota"><span class="kpi-rotulo">${icone('alerta', 'ic-mini')}Envio ao Drive</span><span class="kpi-sub">Por enquanto o Código M guarda <b>links</b>. Enviar arquivos direto para a pasta certa do Drive é a próxima etapa (precisa de uma permissão extra do Google).</span></div>
+      ${kpi({ rotulo: 'Guardados no Drive', valor: m.materiais.filter((x) => x.driveId).length, sub: 'enviados pelo Código M ou pelo Classroom' })}
     </div>
     <div class="filtros">
       ${chips('origem', [['todas', 'Todos'], ['minhas', 'Meus'], ['turma', 'Da turma']], estado.origem)}
+      ${chips('tipo', [['', 'Todos os tipos'], ...m.config.tiposMaterial.map((t) => [t.nome, t.nome])], estado.tipo)}
       ${seletorCadeira(m, estado.cadeira)}
       <input class="filtro-texto" type="search" placeholder="Buscar materiais" data-filtro-texto="busca" value="${esc(estado.busca)}">
     </div>
@@ -86,6 +92,6 @@ export function render(el, m) {
     }).join('') : vazio('Nenhum material com esses filtros. Use “+ Material” ou o botão dentro de cada assunto.')}`;
 
   ligarFiltros(el, estado, redesenhar);
-  ligarMateriais(el);
-  el.querySelector('[data-novo]').addEventListener('click', () => novoMaterial(m, { cadeiraId: estado.cadeira }));
+  ligarMateriais(el, m);
+  el.querySelector('[data-novo]').addEventListener('click', () => novoMaterial(m, { cadeiraId: estado.cadeira, tipo: estado.tipo }));
 }

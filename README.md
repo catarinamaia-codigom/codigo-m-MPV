@@ -28,8 +28,12 @@ Site estático (HTML, CSS e JavaScript puros, sem build), publicado de graça no
 - Com **Entrar com Google**, tudo grava na planilha "Código M - Dados". As abas novas são criadas
   sozinhas no próximo login (veja `docs/PLANILHA.md`).
 
-Ainda **não** ligado (depende de permissão do Google ou decisão): envio de arquivos ao Drive,
-Google Agenda nos dois sentidos, transcrição/OCR/IA por API (pagos — fora até você decidir).
+**Drive (04/11):** o site envia arquivos (PDF, imagens, prints colados com ⌘V, gravações) para o lugar
+certo de `20-Medicina`, criando as pastas que faltam, e move o arquivo quando o assunto muda. Mostra
+"Enviado ao Drive" só depois que o Drive devolve o ID real. Precisa da Google Drive API ativada e do
+escopo `.../auth/drive` no projeto do Google Cloud (passo a passo em Configurações).
+
+Ainda **não** ligado: Google Agenda nos dois sentidos; transcrição/OCR/IA por API (pagos — fora até você decidir).
 
 ## Como ver no ar
 

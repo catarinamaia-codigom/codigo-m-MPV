@@ -42,18 +42,24 @@ Cada item de lista é **uma linha**, para ser fácil incluir ou apagar.
 `id | modulo_id | nome | ordem`
 
 ## Aulas
-`id | data | inicio | fim | cadeira_id | assunto | tipo | turma | local | professor`
+`id | data | inicio | fim | cadeira_id | assunto | tipo | turma | local | professor | aconteceu | presente`
+
+- `aconteceu` (teve aula) e `presente` (eu fui): TRUE/FALSE, marcados na página do assunto ou no calendário. Falta = teve aula e não fui.
 
 - `tipo`: Teórica, Prática, Tutoria, Campo…
 - `turma`: `Todas` (turma inteira) ou `TA`, `TA1`, `TA2`, `TB`, `TB1`… — só aparecem `Todas` e as turmas de `turmas_visiveis`.
 
 ## Avaliacoes
-`id | data | hora | cadeira_id | titulo | tipo | conteudo | turma`
+`id | data | hora | fim | cadeira_id | titulo | tipo | conteudo | turma | local | obs | link | vale | nota | entrega`
+
+- `vale` (pontos máximos) e `nota` (quanto tirei) entram na calculadora. `entrega`: Pendente / Enviado no Classroom / Não precisa.
 
 `conteudo`: assuntos separados por `;`.
 
 ## Estudos (o que a Catarina marca para estudar)
 `id | data | inicio | fim | cadeira_id | assunto | atividade | feito`
+
+- `data` pode ficar vazia: o estudo aparece em "Para estudar" (Início e Calendário). Ao marcar como feito, recebe a data de hoje.
 
 `feito`: `TRUE`/`FALSE` (ou sim/não).
 
@@ -73,10 +79,12 @@ antiga não tiver alguma coluna nova, ela é acrescentada **no fim** do cabeçal
 ### Duvidas
 `id | criada | cadeira_id | assunto | pergunta | motivo | tentativa | resposta | fonte | link | status | sanada_em`
 
-`status`: Aberta / Sanada. `tentativa` = o que você respondeu sem consultar; `resposta` = conferida com fonte.
+`imagem`: ID do arquivo no Drive. `status`: Aberta / Sanada. `tentativa` = o que você respondeu sem consultar; `resposta` = conferida com fonte.
 
 ### Questoes
-`id | data | cadeira_id | assunto | fonte | resultado | confianca | motivos | obs`
+`id | data | cadeira_id | assunto | fonte | resultado | confianca | motivos | obs | imagem`
+
+`imagem`: ID do print da questão no Drive (caderno de erros).
 
 `resultado`: Acertou / Errou / Chutou. `confianca`: 1 a 5. `motivos`: separados por `;`.
 Chute com confiança 1–2 conta como erro; com 4–5 conta acerto, mas pede aprofundamento.
@@ -88,12 +96,14 @@ Chute com confiança 1–2 conta como erro; com 4–5 conta acerto, mas pede apr
 `bonus` = `sim` para nota extra (soma direto na média). `cadeira_id` pode ser o id de um módulo (PIs).
 
 ### Materiais
-`id | criado | cadeira_id | assunto | tipo | titulo | link | origem | copiado | obs`
+`id | criado | cadeira_id | assunto | tipo | titulo | link | origem | copiado | obs | drive_id | hash | nome_original`
+
+`drive_id` só é preenchido depois que o Drive devolve o ID real do arquivo. `hash` reconhece o reenvio do mesmo arquivo. O site também lê linhas gravadas pelo script do Classroom.
 
 `tipo`: um dos `tipo_material` da Config. `origem`: Minha / Turma / Professor / Livro / IA. `copiado`: TRUE/FALSE (material da turma já copiado para a sua pasta).
 
 ### Cartoes (Método Catarina)
-`id | criado | cadeira_id | assunto | frente | verso | fonte | origem | vence | estabilidade | dificuldade | revisoes | lapsos | ultima`
+`id | criado | cadeira_id | assunto | frente | verso | fonte | origem | vence | estabilidade | dificuldade | revisoes | lapsos | ultima | imagem_frente | imagem_verso`
 
 `origem`: Validado (escritos por você, têm prioridade) / Anki / IA. As colunas `vence` a `ultima` são do agendamento FSRS: o site preenche.
 
@@ -101,3 +111,16 @@ Chute com confiança 1–2 conta como erro; com 4–5 conta acerto, mas pede apr
 `data | cartao_id | nota | intervalo`
 
 `nota`: 1 Errei, 2 Difícil, 3 Bom, 4 Fácil. Base das estatísticas do Método Catarina.
+
+## Onde o site guarda arquivos no Drive
+
+Dentro de `Meu Drive › Estudio-IA › 20-Medicina` (pastas criadas sozinhas, sem duplicar):
+
+| O quê | Pasta |
+|---|---|
+| Material de um assunto | `Conhecimento/[Cadeira]/[Assunto]/` (da turma: `[Turma]/`) |
+| Print de questão, cartão, dúvida | `Conhecimento/[Cadeira]/[Assunto]/[Caderno de erros]`, `[Cartoes]`, `[Duvidas]` |
+| Material sem assunto | `Conhecimento/[Cadeira]/[_A-classificar]/` (movido quando o assunto é escolhido) |
+| Material de avaliação | `Periodos/[1M] [2026.2]/[Cadeira]/[Avaliacoes]/` |
+
+Nome do arquivo: `[1M] [Tipo] [Cadeira] [Assunto] [dd-mm-aaaa] [Catarina].ext`.

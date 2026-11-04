@@ -12,12 +12,13 @@ const link = (cad, ass) => `#/cadeiras/${encodeURIComponent(cad)}${ass ? `/${enc
 
 export function render(el, m, [termo = '']) {
   const assuntos = [];
-  for (const a of m.aulas.filter((x) => casa(`${x.assunto} ${x.professor}`, termo))) {
+  const cadeirasAchadas = m.cadeiras.filter((c) => casa(`${c.nome} ${nomeCadeira(m, c.id)}`, termo)).map((c) => c.id);
+  for (const a of m.aulas.filter((x) => casa(`${x.assunto} ${x.professor}`, termo) || cadeirasAchadas.includes(x.cadeiraId))) {
     if (!assuntos.some((x) => x.cadeiraId === a.cadeiraId && mesmoAssunto(x.assunto, a.assunto))) assuntos.push(a);
   }
   const grupos = [
+    ['Cadeiras', 'cadeiras', m.cadeiras.filter((c) => cadeirasAchadas.includes(c.id)).map((c) => [link(c.id), nomeCadeira(m, c.id), ''])],
     ['Assuntos e aulas', 'aula', assuntos.map((a) => [link(a.cadeiraId, a.assunto), a.assunto, `${nomeCadeira(m, a.cadeiraId)} · ${formatoCurto(a.data)}`])],
-    ['Cadeiras', 'cadeiras', m.cadeiras.filter((c) => casa(c.nome, termo)).map((c) => [link(c.id), c.nome, ''])],
     ['Dúvidas', 'duvidas', m.duvidas.filter((d) => casa(`${d.pergunta} ${d.resposta}`, termo)).map((d) => [link(d.cadeiraId, d.assunto), d.pergunta, `${nomeCadeira(m, d.cadeiraId)} · ${d.sanada ? 'sanada' : 'em aberto'}`])],
     ['Materiais', 'materiais', m.materiais.filter((x) => casa(`${x.titulo} ${x.obs}`, termo)).map((x) => [x.link || link(x.cadeiraId, x.assunto), x.titulo, `${x.tipo} · ${nomeCadeira(m, x.cadeiraId)}`])],
     ['Cartões', 'flashcard', m.cartoes.filter((c) => casa(`${c.frente} ${c.verso}`, termo)).map((c) => [link(c.cadeiraId, c.assunto), c.frente, nomeCadeira(m, c.cadeiraId)])],

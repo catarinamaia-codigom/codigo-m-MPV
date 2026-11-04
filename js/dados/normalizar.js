@@ -46,7 +46,11 @@ export function lerConfig(linhas = []) {
       max: num(sug.max_sugestoes, 4),
     },
     cronograma: mapa('cronograma'),
-    tiposMaterial: (grupos.tipo_material ?? []).map((i) => ({ nome: i.chave, icone: i.valor || 'arquivo' })),
+    tiposMaterial: (() => {
+      const tipos = (grupos.tipo_material ?? []).map((i) => ({ nome: i.chave, icone: i.valor || 'arquivo' }));
+      if (!tipos.some((t) => t.icone === 'infografico')) tipos.splice(Math.min(2, tipos.length), 0, { nome: 'Infográfico', icone: 'infografico' });
+      return tipos;
+    })(),
     motivosDuvida: (grupos.motivo_duvida ?? []).map((i) => i.chave),
     tiposAvaliacao: (grupos.tipo_avaliacao ?? []).map((i) => i.chave).filter(Boolean).length
       ? grupos.tipo_avaliacao.map((i) => i.chave).filter(Boolean)
@@ -103,6 +107,8 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
       turma: txt(a.turma) || 'Todas',
       local: txt(a.local),
       professor: txt(a.professor),
+      aconteceu: bool(a.aconteceu),
+      presente: bool(a.presente),
     }))
     .filter((a) => a.data)
     .sort(porDataHora);
@@ -120,6 +126,10 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
       turma: txt(a.turma) || 'Todas',
       local: txt(a.local),
       obs: txt(a.obs),
+      link: txt(a.link),
+      vale: txt(a.vale) === '' ? null : num(a.vale, 10),
+      nota: txt(a.nota) === '' ? null : num(a.nota, 0),
+      entrega: txt(a.entrega),
     }))
     .filter((a) => a.data)
     .sort(porDataHora);
@@ -135,8 +145,8 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
       atividade: txt(e.atividade),
       feito: bool(e.feito),
     }))
-    .filter((e) => e.data)
-    .sort(porDataHora);
+    .filter((e) => e.id && e.atividade)
+    .sort((a, b) => (a.data ? 0 : 1) - (b.data ? 0 : 1) || porDataHora(a, b));
 
   const pendencias = (abas.Pendencias ?? [])
     .map((p) => ({
@@ -167,6 +177,7 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
       link: txt(d.link),
       sanada: ['sanada', 'resolvida', 'ok', 'feita'].includes(txt(d.status).toLowerCase()),
       sanadaEm: normalizarData(d.sanada_em),
+      imagem: txt(d.imagem),
     }))
     .filter((d) => d.id && d.pergunta)
     .sort((a, b) => b.criada.localeCompare(a.criada));
@@ -185,6 +196,7 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
       confianca: Math.min(5, Math.max(1, Math.round(num(q.confianca, 3)))),
       motivos: lista(q.motivos),
       obs: txt(q.obs),
+      imagem: txt(q.imagem),
     }))
     .filter((q) => q.id && q.resultado)
     .sort((a, b) => b.data.localeCompare(a.data));
@@ -206,19 +218,26 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
     })
     .filter((n) => n.id && n.nome);
 
+  // Também lê linhas gravadas pelo script do Classroom (nomes de coluna alternativos)
   const materiais = (abas.Materiais ?? [])
-    .map((x) => ({
-      id: txt(x.id),
-      criado: normalizarData(x.criado),
-      cadeiraId: txt(x.cadeira_id),
-      assunto: txt(x.assunto),
-      tipo: txt(x.tipo) || 'Arquivo',
-      titulo: txt(x.titulo),
-      link: txt(x.link),
-      origem: txt(x.origem) || 'Minha',
-      copiado: bool(x.copiado),
-      obs: txt(x.obs),
-    }))
+    .map((x) => {
+      const driveId = txt(x.drive_id || x.arquivo_id || x.id_drive);
+      return {
+        id: txt(x.id || x.material_id || driveId),
+        criado: normalizarData(x.criado || x.data || x.importado_em),
+        cadeiraId: txt(x.cadeira_id),
+        assunto: txt(x.assunto),
+        tipo: txt(x.tipo) || 'Arquivo',
+        titulo: txt(x.titulo || x.nome || x.titulo_original || x.nome_original),
+        link: txt(x.link || x.url || x.link_drive) || (driveId ? `https://drive.google.com/file/d/${driveId}/view` : ''),
+        origem: txt(x.origem || x.fonte) || 'Minha',
+        copiado: bool(x.copiado),
+        obs: txt(x.obs),
+        driveId,
+        hash: txt(x.hash),
+        nomeOriginal: txt(x.nome_original),
+      };
+    })
     .filter((x) => x.id && (x.titulo || x.link))
     .sort((a, b) => b.criado.localeCompare(a.criado));
 
@@ -239,6 +258,8 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
       revisoes: num(c.revisoes, 0),
       lapsos: num(c.lapsos, 0),
       ultima: normalizarData(c.ultima),
+      imagemFrente: txt(c.imagem_frente),
+      imagemVerso: txt(c.imagem_verso),
     }))
     .filter((c) => c.id && c.frente);
 

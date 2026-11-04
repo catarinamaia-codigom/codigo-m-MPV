@@ -5,9 +5,10 @@
 import { esc } from '../util/texto.js';
 import { formatoLongo, formatoCurto, contagemDias, DIAS_CURTOS, diaDaSemana, inicioDaSemana, somarDias, deISO, diasEntre } from '../util/datas.js';
 import { icone } from '../ui/icones.js';
-import { cartao, vazio, aviso, copiar, kpi } from '../ui/componentes.js';
+import { cartao, vazio, aviso, copiar, kpi, estaAberto, lembrarAberto } from '../ui/componentes.js';
 import { atualizar } from '../dados/dataSource.js';
-import { novaAvaliacao, novoEstudo, novaPendencia } from './formularios.js';
+import { novaAvaliacao, novoEstudo, novaPendencia, editarAvaliacao } from './formularios.js';
+import { linhaEstudo, ligarEstudos, linhaAvaliacao, ligarAvaliacoes } from './cadeiras.js';
 import { aulasDoDia, estudosDoDia, avaliacoesDoDia, feriadoDoDia, proximasAvaliacoes, pendenciasAbertas, nomeCadeira } from '../dados/consultas.js';
 import { gerarSugestoes } from '../regras/sugestoes.js';
 import { cartoesVencidos } from './metodo.js';
@@ -45,24 +46,31 @@ function agendaDia(m) {
   const d = diaSel;
   const feriado = feriadoDoDia(m, d);
   const itens = [
-    ...avaliacoesDoDia(m, d).map((a) => ({ hora: a.hora, fim: a.fim, html: `<li class="ag-av"><span class="hora">${esc(a.hora || '—')}</span><div><strong>${icone('alerta', 'ic-mini')} ${esc(a.titulo)}</strong><p class="meta">${linkCadeira(m, a.cadeiraId)} ${esc(a.tipo)}</p></div></li>` })),
-    ...aulasDoDia(m, d).map((a) => ({ hora: a.inicio, html: `<li><span class="hora">${esc(a.inicio)}<small>${esc(a.fim)}</small></span><div><a class="t-forte" href="#/cadeiras/${encodeURIComponent(a.cadeiraId)}/${encodeURIComponent(a.assunto)}">${esc(a.assunto)}</a><p class="meta">${linkCadeira(m, a.cadeiraId)} ${esc(a.tipo)}${a.turma !== 'Todas' ? ` · ${esc(a.turma)}` : ''}${a.local ? ` · ${esc(a.local)}` : ''}</p></div></li>` })),
-    ...estudosDoDia(m, d).map((e) => ({ hora: e.inicio || '99', html: `<li class="ag-estudo ${e.feito ? 'feito' : ''}"><label class="hora"><input type="checkbox" data-estudo="${esc(e.id)}" ${e.feito ? 'checked' : ''} aria-label="Feito: ${esc(e.atividade)}"><span class="caixa">${icone('check')}</span></label><div><strong>${esc(e.atividade)}</strong><p class="meta">${e.inicio ? `${esc(e.inicio)}${e.fim ? `–${esc(e.fim)}` : ''} · ` : ''}${e.cadeiraId ? linkCadeira(m, e.cadeiraId, e.assunto) : 'Pessoal'}${e.assunto ? ` ${esc(e.assunto)}` : ''}</p></div></li>` })),
+    ...avaliacoesDoDia(m, d).map((a) => ({ hora: a.hora, fim: a.fim, html: `<li class="ag-av" data-avaliacao="${esc(a.id)}" role="button" tabindex="0"><span class="hora">${esc(a.hora || '—')}</span><div><strong>${icone('alerta', 'ic-mini')} ${esc(a.titulo)}</strong><p class="meta">${esc(nomeCadeira(m, a.cadeiraId))} · ${esc(a.tipo)} · toque para abrir</p></div></li>` })),
+    ...aulasDoDia(m, d).map((a) => ({ hora: a.inicio, html: `<li><span class="hora">${esc(a.inicio)}<small>${esc(a.fim)}</small></span><div><a class="t-forte" href="#/cadeiras/${encodeURIComponent(a.cadeiraId)}/${encodeURIComponent(a.assunto)}">${esc(a.assunto)}</a><p class="meta">${linkCadeira(m, a.cadeiraId)} ${esc(a.tipo)}${a.turma !== 'Todas' ? ` · ${esc(a.turma)}` : ''}${a.local ? ` · ${esc(a.local)}` : ''}</p></div><a class="btn-mini btn-abrir" href="#/cadeiras/${encodeURIComponent(a.cadeiraId)}/${encodeURIComponent(a.assunto)}">Abrir assunto ${icone('seta', 'ic-mini')}</a></li>` })),
+    ...estudosDoDia(m, d).map((e) => ({ hora: e.inicio || '99', html: linhaEstudo(m, e) })),
   ].sort((a, b) => (a.hora || '00').localeCompare(b.hora || '00'));
   const rotulo = d === m.hoje ? 'Hoje' : maiuscula(formatoLongo(d));
   return `
     <p class="agenda-dia-titulo">${esc(rotulo)}${feriado ? ` · ${icone('feriado', 'ic-mini')} ${esc(feriado.nome)}` : ''}</p>
-    ${itens.length ? `<ul class="agenda">${itens.map((i) => i.html).join('')}</ul>` : vazio(feriado ? 'Feriado, sem aulas.' : 'Nada neste dia.')}`;
+    ${itens.length ? `<ul class="agenda">${itens.map((i) => i.html).join('')}</ul>` : vazio(feriado ? 'Feriado, sem aulas.' : 'Nada neste dia.')}
+    ${semData(m)}`;
+}
+
+/** Estudos marcados sem data: escolha na hora de montar o dia. */
+function semData(m) {
+  const lista = m.estudos.filter((e) => !e.data && !e.feito);
+  if (!lista.length) return '';
+  return `<details class="sem-data" data-lembrar="inicio-sem-data" ${estaAberto('inicio-sem-data', true) ? 'open' : ''}>
+    <summary>Para estudar, sem data <span class="contador">${lista.length}</span></summary>
+    <ul class="lista-estudos">${lista.map((e) => linhaEstudo(m, e, { botaoHoje: true })).join('')}</ul>
+  </details>`;
 }
 
 function blocoAvaliacoes(m) {
   const avs = proximasAvaliacoes(m, 5);
   if (!avs.length) return vazio('Nenhuma avaliação marcada.');
-  return `<ul class="linha-avaliacoes">${avs.map((a) => `
-    <li class="${a.faltam <= 3 ? 'urgente' : ''}">
-      <span class="contagem"><b>${a.faltam === 0 ? 'hoje' : a.faltam}</b>${a.faltam === 0 ? '' : a.faltam === 1 ? 'dia' : 'dias'}</span>
-      <span><strong>${esc(a.titulo)}</strong><small class="meta">${DIAS_CURTOS[diaDaSemana(a.data)]} ${formatoCurto(a.data)}${a.hora ? ` ${esc(a.hora)}` : ''} · ${esc(a.tipo)}</small></span>
-    </li>`).join('')}</ul>`;
+  return `<ul class="linha-avaliacoes clicavel">${avs.map((a) => linhaAvaliacao(m, a)).join('')}</ul>`;
 }
 
 function blocoPendencias(m) {
@@ -159,18 +167,9 @@ export function render(el, m) {
     render(el, m);
   }));
 
-  el.querySelectorAll('[data-estudo]').forEach((cb) =>
-    cb.addEventListener('change', async () => {
-      cb.disabled = true;
-      try {
-        await atualizar('Estudos', cb.dataset.estudo, { feito: cb.checked });
-      } catch (erro) {
-        cb.checked = !cb.checked;
-        cb.disabled = false;
-        aviso(erro.message);
-      }
-    })
-  );
+  ligarEstudos(el, m);
+  ligarAvaliacoes(el, m);
+  lembrarAberto(el);
 
   el.querySelectorAll('[data-pendencia]').forEach((btn) =>
     btn.addEventListener('click', async () => {
@@ -190,7 +189,7 @@ export function render(el, m) {
     novoEstudo(m, { data: m.hoje, cadeiraId: s.cadeiraId, assunto: s.assunto, atividade: s.titulo });
   }));
 
-  const novos = { estudo: () => novoEstudo(m, { data: diaSel }), avaliacao: () => novaAvaliacao(m), pendencia: () => novaPendencia(m) };
+  const novos = { estudo: () => novoEstudo(m, { data: '' }), avaliacao: () => novaAvaliacao(m), pendencia: () => novaPendencia(m) };
   el.querySelectorAll('[data-novo]').forEach((btn) => btn.addEventListener('click', () => novos[btn.dataset.novo]()));
 
   el.querySelectorAll('[data-atalho]').forEach((btn) =>

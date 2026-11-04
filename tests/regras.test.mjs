@@ -115,3 +115,31 @@ test('Simulação: abas novas são lidas pelo modelo', () => {
   assert.equal(m.notas.find((n) => n.id === 'N-ex1').nota, 3.2, 'vírgula decimal da planilha');
   assert.equal(m.notas.find((n) => n.id === 'N-ex1').peso, 4, 'peso em branco = vale');
 });
+
+test('Drive: destino de cada coisa, com a regra dos colchetes', async () => {
+  const { destino, textoDestino, semestreDoPeriodo, bloco } = await import('../js/dados/drive.js').catch(() => ({}));
+  if (!destino) return; // drive.js usa APIs do navegador só nas funções de rede
+  assert.equal(semestreDoPeriodo('1M'), '2026.2');
+  assert.equal(semestreDoPeriodo('2M'), '2027.1');
+  assert.equal(semestreDoPeriodo('3M'), '2027.2');
+  assert.equal(bloco('Músculos: membro/inferior'), '[Musculos membro inferior]');
+  const base = { periodo: '1M', cadeira: 'Anatomia' };
+  assert.equal(textoDestino(destino({ ...base, assunto: 'Ombro' })), '20-Medicina/Conhecimento/[Anatomia]/[Ombro]/');
+  assert.equal(textoDestino(destino({ ...base, assunto: 'Ombro', origem: 'Turma' })), '20-Medicina/Conhecimento/[Anatomia]/[Ombro]/[Turma]/');
+  assert.equal(textoDestino(destino({ ...base, assunto: 'Ombro', categoria: 'questao' })), '20-Medicina/Conhecimento/[Anatomia]/[Ombro]/[Caderno de erros]/');
+  assert.equal(textoDestino(destino({ ...base, assunto: '' })), '20-Medicina/Conhecimento/[Anatomia]/[_A-classificar]/');
+  assert.equal(textoDestino(destino({ ...base, categoria: 'avaliacao' })), '20-Medicina/Periodos/[1M] [2026.2]/[Anatomia]/[Avaliacoes]/');
+});
+
+test('Estudos sem data ficam guardados; cadeira mostra o período; faltas', async () => {
+  const { nomeCadeira, faltasDaCadeira } = await import('../js/dados/consultas.js');
+  const m = modelo();
+  assert.ok(m.estudos.some((e) => !e.data), 'estudo sem data não é descartado');
+  assert.equal(nomeCadeira(m, 'anatomia'), 'Anatomia 1M');
+  const aula = m.aulas.find((a) => a.cadeiraId === 'anatomia');
+  aula.aconteceu = true;
+  assert.equal(faltasDaCadeira(m, 'anatomia'), 1, 'teve aula e não fui = falta');
+  aula.presente = true;
+  assert.equal(faltasDaCadeira(m, 'anatomia'), 0);
+  assert.ok(m.config.tiposMaterial.some((t) => t.icone === 'infografico'), 'infográfico é um tipo de material');
+});

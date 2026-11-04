@@ -7,12 +7,13 @@ import { GOOGLE } from '../config.js';
 const CHAVE = 'codigom.google.token';
 let token = null;
 let expira = 0;
+let comDrive = false;
 let cliente = null;
 let scriptCarregado = null;
 
 try {
   const salvo = JSON.parse(sessionStorage.getItem(CHAVE) || 'null');
-  if (salvo && salvo.expira > Date.now()) ({ token, expira } = salvo);
+  if (salvo && salvo.expira > Date.now()) ({ token, expira, comDrive = false } = salvo);
 } catch {
   /* sem armazenamento: só pede login de novo */
 }
@@ -20,6 +21,8 @@ try {
 export const configurado = () => Boolean(GOOGLE.clientId && GOOGLE.planilhaId);
 export const conectado = () => Boolean(token) && Date.now() < expira - 60_000;
 export const tokenAtual = () => (conectado() ? token : null);
+/** true se o login deu a permissão do Drive (criar pastas e guardar arquivos). */
+export const temDrive = () => conectado() && comDrive;
 
 /** Carrega o script do Google (chamado cedo, para o botão abrir o popup na hora). */
 export function prepararLogin() {
@@ -47,13 +50,14 @@ export async function entrar() {
     });
     cliente.callback = (r) => {
       if (r.error) return erro(new Error(`Login não concluído (${r.error}).`));
-      if (!window.google.accounts.oauth2.hasGrantedAllScopes(r, GOOGLE.escopos)) {
+      if (!window.google.accounts.oauth2.hasGrantedAllScopes(r, GOOGLE.escopoPlanilha)) {
         return erro(new Error('Para usar a planilha, marque a permissão de ver e editar planilhas no login.'));
       }
       token = r.access_token;
       expira = Date.now() + Number(r.expires_in || 3600) * 1000;
+      comDrive = window.google.accounts.oauth2.hasGrantedAllScopes(r, GOOGLE.escopoDrive);
       try {
-        sessionStorage.setItem(CHAVE, JSON.stringify({ token, expira }));
+        sessionStorage.setItem(CHAVE, JSON.stringify({ token, expira, comDrive }));
       } catch {
         /* tudo bem */
       }
@@ -69,6 +73,7 @@ export function sair() {
   if (token && window.google?.accounts?.oauth2) window.google.accounts.oauth2.revoke(token, () => {});
   token = null;
   expira = 0;
+  comDrive = false;
   try {
     sessionStorage.removeItem(CHAVE);
   } catch {

@@ -8,6 +8,7 @@ import { chips, seletorCadeira, ligarFiltros, vazio, aviso, copiar, casa, kpi } 
 import { atualizar } from '../dados/dataSource.js';
 import { nomeCadeira } from '../dados/consultas.js';
 import { novaDuvida, responderDuvida, novoCartao } from './formularios.js';
+import { mostrarImagens } from '../dados/drive.js';
 
 const estado = { status: 'abertas', cadeira: '', busca: '' };
 
@@ -25,9 +26,10 @@ export function cartaoDuvida(m, d, { mostrarCadeira = true } = {}) {
         <div class="duvida-acoes">
           <button class="btn-mini" data-responder="${esc(d.id)}">${icone('anotacao', 'ic-mini')} ${d.resposta || d.tentativa ? 'Editar' : 'Responder'}</button>
           <button class="btn-mini" data-tutor="${esc(d.id)}" title="Copia um prompt de tutor e abre o chat">${icone('ia', 'ic-mini')} Tutor</button>
-          ${d.resposta ? `<button class="btn-mini" data-cartao="${esc(d.id)}" title="Criar cartão do Método Catarina">${icone('flashcard', 'ic-mini')} Cartão</button>` : ''}
+          <button class="btn-mini" data-cartao="${esc(d.id)}" title="Transformar em cartão do Método Catarina">${icone('flashcard', 'ic-mini')} Cartão</button>
         </div>
       </div>
+      ${d.imagem ? `<img class="duvida-imagem" data-imagem-drive="${esc(d.imagem)}" alt="Imagem da dúvida">` : ''}
       ${d.tentativa || d.resposta ? `<div class="duvida-lados">
         <div><span class="rotulo-lado">Minha tentativa</span><p>${esc(d.tentativa) || '<span class="meta">—</span>'}</p></div>
         <div><span class="rotulo-lado">Resposta conferida</span><p>${esc(d.resposta) || '<span class="meta">ainda não conferida</span>'}</p>
@@ -56,7 +58,7 @@ export function ligarDuvidas(el, m) {
   el.querySelectorAll('[data-cartao]').forEach((b) =>
     b.addEventListener('click', () => {
       const d = achar(b.dataset.cartao);
-      novoCartao(m, { cadeiraId: d.cadeiraId, assunto: d.assunto, frente: d.pergunta, verso: d.resposta, fonte: d.fonte });
+      novoCartao(m, { cadeiraId: d.cadeiraId, assunto: d.assunto, frente: d.pergunta, verso: d.resposta || d.tentativa, fonte: d.fonte });
     })
   );
   el.querySelectorAll('[data-tutor]').forEach((b) =>
@@ -105,5 +107,6 @@ export function render(el, m) {
 
   ligarFiltros(el, estado, redesenhar);
   ligarDuvidas(el, m);
+  mostrarImagens(el);
   el.querySelector('[data-nova]').addEventListener('click', () => novaDuvida(m, { cadeiraId: estado.cadeira }));
 }

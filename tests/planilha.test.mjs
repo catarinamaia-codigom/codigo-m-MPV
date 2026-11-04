@@ -83,7 +83,8 @@ test('planilha antiga ganha as abas novas e as colunas que faltam', async () => 
   falsa.abas.get('Avaliacoes').valores[0] = ['id', 'data', 'hora', 'cadeira_id', 'titulo', 'tipo', 'conteudo', 'turma'];
   assert.equal(await ad.garantirEstrutura(async () => assert.fail('não deveria pedir a semente')), false);
   assert.deepEqual(falsa.abas.get('Duvidas').valores[0].slice(0, 3), ['id', 'criada', 'cadeira_id']);
-  assert.deepEqual(falsa.abas.get('Avaliacoes').valores[0].slice(-3), ['fim', 'local', 'obs'], 'colunas novas vão para o fim');
+  assert.deepEqual(falsa.abas.get('Avaliacoes').valores[0].slice(8), ['fim', 'local', 'obs', 'link', 'vale', 'nota', 'entrega'], 'colunas novas vão para o fim');
+  assert.deepEqual(falsa.abas.get('Avaliacoes').valores[0].slice(0, 3), ['id', 'data', 'hora'], 'colunas antigas não mudam de lugar');
   await ad.adicionarLinhas('Questoes', [
     { id: 'Q1', data: '2026-11-04', cadeira_id: 'histologia', assunto: 'Epitélio', resultado: 'Acertou', confianca: 4 },
     { id: 'Q2', data: '2026-11-04', cadeira_id: 'histologia', assunto: 'Epitélio', resultado: 'Chutou', confianca: 1 },

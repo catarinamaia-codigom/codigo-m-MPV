@@ -7,11 +7,15 @@ import {
   somarDias, inicioDaSemana, deISO, paraISO, DIAS_CURTOS, MESES, formatoLongo, diaDaSemana,
 } from '../util/datas.js';
 import { icone } from '../ui/icones.js';
-import { abrirModal } from '../ui/componentes.js';
+import { abrirModal, fecharModal, aviso, vazio, casa } from '../ui/componentes.js';
+import { atualizar } from '../dados/dataSource.js';
+import { editarEstudo, editarAvaliacao, novoEstudo } from './formularios.js';
+import { linhaEstudo, ligarEstudos } from './cadeiras.js';
 import { nomeCadeira, cadeiraPorId, moduloPorId, feriadoDoDia } from '../dados/consultas.js';
+import { formatoCurto } from '../util/datas.js';
 
 const CHAVE_VISAO = 'codigom.calendario.visao'; // só preferência de exibição
-const estado = { visao: lerVisao(), ref: null };
+const estado = { visao: lerVisao(), ref: null, busca: '' };
 
 function lerVisao() {
   try {
@@ -44,7 +48,9 @@ function eventosDoDia(m, data) {
       sub: `${nomeCadeira(m, e.cadeiraId)}${e.assunto ? ` · ${e.assunto}` : ''}`, feito: e.feito, ordem: 2,
     })),
   ];
-  return ev.sort((a, b) => (a.inicio || '99').localeCompare(b.inicio || '99') || a.ordem - b.ordem);
+  return ev
+    .filter((e) => !estado.busca || casa(`${e.titulo} ${e.sub}`, estado.busca))
+    .sort((a, b) => (a.inicio || '99').localeCompare(b.inicio || '99') || a.ordem - b.ordem);
 }
 
 const ROTULO = { aula: 'Aula', estudo: 'Estudo', avaliacao: 'Avaliação' };
@@ -129,7 +135,7 @@ function detalhe(m, tipo, id) {
     const c = cadeiraPorId(m, cid);
     if (!c) return '';
     const mod = moduloPorId(m, c.moduloId);
-    return `<a href="#/cadeiras/${encodeURIComponent(c.id)}">${esc(c.nome)}</a>${mod ? ` <span class="meta">· ${esc(mod.nome)}</span>` : ''}`;
+    return `<a href="#/cadeiras/${encodeURIComponent(c.id)}">${esc(nomeCadeira(m, c.id))}</a>${mod ? ` <span class="meta">· ${esc(mod.nome)}</span>` : ''}`;
   };
   const quando = (d, ini, fim) => `${esc(formatoLongo(d))}${ini ? `, ${esc(ini)}${fim ? `–${esc(fim)}` : ''}` : ''}`;
 
@@ -142,26 +148,54 @@ function detalhe(m, tipo, id) {
       ${linha('Turma', esc(a.turma))}
       ${linha('Local', esc(a.local))}
       ${linha('Professor(a)', esc(a.professor))}
-    </dl>`);
+    </dl>
+    <div class="presenca-modal">
+      <label class="opcao-check"><input type="checkbox" data-campo="aconteceu" ${a.aconteceu ? 'checked' : ''}><span>Teve aula</span></label>
+      <label class="opcao-check"><input type="checkbox" data-campo="presente" ${a.presente ? 'checked' : ''}><span>Eu fui</span></label>
+    </div>
+    <p><a class="btn btn-principal" href="#/cadeiras/${encodeURIComponent(a.cadeiraId)}/${encodeURIComponent(a.assunto)}">Abrir assunto</a></p>`);
+    document.querySelectorAll('.modal [data-campo]').forEach((cb) =>
+      cb.addEventListener('change', async () => {
+        const campos = { [cb.dataset.campo]: cb.checked };
+        if (cb.dataset.campo === 'presente' && cb.checked) {
+          campos.aconteceu = true;
+          document.querySelector('.modal [data-campo="aconteceu"]').checked = true;
+        }
+        try {
+          await atualizar('Aulas', a.id, campos);
+        } catch (e) {
+          cb.checked = !cb.checked;
+          aviso(e.message);
+        }
+      })
+    );
+    document.querySelector('.modal a.btn')?.addEventListener('click', () => fecharModal());
   } else if (tipo === 'estudo') {
-    const e = m.estudos.find((x) => x.id === id);
-    abrirModal(e.atividade, `<dl class="detalhes">
-      ${linha('Quando', quando(e.data, e.inicio, e.fim))}
-      ${linha('Cadeira', cadeiraLink(e.cadeiraId))}
-      ${linha('Assunto', esc(e.assunto))}
-      ${linha('Situação', e.feito ? 'Feito' : 'A fazer')}
-    </dl>`);
+    editarEstudo(m, m.estudos.find((x) => x.id === id));
   } else {
-    const a = m.avaliacoes.find((x) => x.id === id);
-    abrirModal(a.titulo, `<dl class="detalhes">
-      ${linha('Quando', quando(a.data, a.hora, a.fim))}
-      ${linha('Cadeira', cadeiraLink(a.cadeiraId) || esc(nomeCadeira(m, a.cadeiraId)))}
-      ${linha('Tipo', esc(a.tipo))}
-      ${linha('Conteúdo', esc(a.conteudo))}
-      ${linha('Observação', esc(a.obs))}
-      ${linha('Local', esc(a.local))}
-    </dl>`);
+    editarAvaliacao(m, m.avaliacoes.find((x) => x.id === id));
   }
+}
+
+/** Próximas ocorrências que batem com a busca (para pular até a semana). */
+function resultadosBusca(m) {
+  if (!estado.busca) return '';
+  const achados = [
+    ...m.aulas.map((a) => ({ data: a.data, hora: a.inicio, titulo: a.assunto, sub: nomeCadeira(m, a.cadeiraId) })),
+    ...m.avaliacoes.map((a) => ({ data: a.data, hora: a.hora, titulo: a.titulo, sub: nomeCadeira(m, a.cadeiraId) })),
+    ...m.estudos.filter((e) => e.data).map((e) => ({ data: e.data, hora: e.inicio, titulo: e.atividade, sub: nomeCadeira(m, e.cadeiraId) })),
+  ].filter((x) => x.data >= m.hoje && casa(`${x.titulo} ${x.sub}`, estado.busca)).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+  return `<div class="cal-resultados">${achados.length ? `<span class="meta">${achados.length} a partir de hoje:</span> ${achados.slice(0, 10).map((x) => `<button class="chip" data-ir-semana="${x.data}">${esc(formatoCurto(x.data))} · ${esc(x.titulo)} <small>${esc(x.sub)}</small></button>`).join('')}` : '<span class="meta">Nada encontrado a partir de hoje.</span>'}</div>`;
+}
+
+/** Coluna lateral: estudos marcados sem data. */
+function lateralSemData(m) {
+  const lista = m.estudos.filter((e) => !e.data && !e.feito);
+  return `<aside class="cal-lateral cartao">
+    <header class="cartao-topo"><h2>${icone('estudo')}<span>Para estudar</span><small class="contagem-titulo">${lista.length} sem data</small></h2><button class="btn-mais" data-novo-estudo title="Marcar estudo" aria-label="Marcar estudo">+</button></header>
+    <div class="cartao-corpo">${lista.length ? `<ul class="lista-estudos">${lista.map((e) => linhaEstudo(m, e, { botaoHoje: true })).join('')}</ul>` : vazio('Tudo com data. Marque estudos sem data para escolher na hora de montar o dia.')}
+      <p class="nota">Ao marcar como feito, o estudo vai para o dia de hoje. Clique no nome para escolher outra data.</p></div>
+  </aside>`;
 }
 
 export function render(el, m) {
@@ -186,12 +220,17 @@ export function render(el, m) {
           </div>
         </div>
       </header>
+      <div class="cal-busca"><input class="filtro-texto" type="search" id="cal-busca" placeholder="Buscar no calendário: cadeira, aula, avaliação…" value="${esc(estado.busca)}" aria-label="Buscar no calendário"></div>
+      ${resultadosBusca(m)}
       <ul class="legenda">
         <li><span class="amostra ev-aula"></span>Aula</li>
         <li><span class="amostra ev-estudo"></span>Estudo</li>
         <li><span class="amostra ev-avaliacao"></span>${icone('alerta', 'ic-mini')}Avaliação</li>
       </ul>
-      ${estado.visao === 'mes' ? visaoMes(m) : visaoSemana(m)}`;
+      <div class="cal-layout">
+        <div class="cal-principal">${estado.visao === 'mes' ? visaoMes(m) : visaoSemana(m)}</div>
+        ${lateralSemData(m)}
+      </div>`;
 
     el.querySelectorAll('[data-nav]').forEach((b) =>
       b.addEventListener('click', () => {
@@ -222,6 +261,20 @@ export function render(el, m) {
     el.querySelectorAll('[data-tipo][data-id]').forEach((b) =>
       b.addEventListener('click', () => detalhe(m, b.dataset.tipo, b.dataset.id))
     );
+    ligarEstudos(el, m);
+    el.querySelector('[data-novo-estudo]').addEventListener('click', () => novoEstudo(m, { data: '' }));
+    const busca = el.querySelector('#cal-busca');
+    let t;
+    busca.addEventListener('input', () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        estado.busca = busca.value.trim();
+        desenhar();
+        const novo = el.querySelector('#cal-busca');
+        novo.focus();
+        novo.setSelectionRange(novo.value.length, novo.value.length);
+      }, 250);
+    });
   };
   desenhar();
 }

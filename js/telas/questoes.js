@@ -9,6 +9,7 @@ import { adicionar, avisarMudanca, novoId, emSimulacao } from '../dados/dataSour
 import { nomeCadeira } from '../dados/consultas.js';
 import { estatisticaQuestoes, avaliarQuestao, dominioAssunto, assuntosDaCadeira, mesmoAssunto } from '../regras/dominio.js';
 import { novaQuestao } from './formularios.js';
+import { verImagem } from './cadeiras.js';
 
 const estado = { cadeira: '', periodo: 'tudo' };
 const lote = { cadeira: '', assunto: '', fonte: '', confianca: '3', contagem: 0 };
@@ -95,10 +96,11 @@ export function render(el, m) {
       </tbody></table>` : vazio('Registre questões para ver o desempenho por assunto.')}</div></section>
     <section class="cartao"><header class="cartao-topo"><h2>${icone('relogio')}<span>Últimas registradas</span></h2></header>
       <div class="cartao-corpo">${qs.length ? `<table class="tabela"><thead><tr><th>Data</th><th>Resultado</th><th>Conf.</th><th>Cadeira · assunto</th><th>Motivos</th><th>Fonte</th></tr></thead><tbody>
-        ${qs.slice(0, 40).map((q) => `<tr><td>${q.data ? formatoCurto(q.data) : ''}</td><td><span class="res res-${q.resultado.toLowerCase()}">${esc(q.resultado)}</span></td><td>${q.confianca}</td><td>${esc(nomeCadeira(m, q.cadeiraId))} · ${esc(q.assunto)}</td><td class="meta">${esc(q.motivos.join(', '))}</td><td class="meta">${esc(q.fonte)}</td></tr>`).join('')}
+        ${qs.slice(0, 40).map((q) => `<tr><td>${q.data ? formatoCurto(q.data) : ''}</td><td><span class="res res-${q.resultado.toLowerCase()}">${esc(q.resultado)}</span>${q.imagem ? ` <button class="link-botao" data-ver-imagem="${esc(q.imagem)}" title="Ver print">${icone('imagem', 'ic-mini')}</button>` : ''}</td><td>${q.confianca}</td><td>${esc(nomeCadeira(m, q.cadeiraId))} · ${esc(q.assunto)}</td><td class="meta">${esc(q.motivos.join(', '))}</td><td class="meta">${esc(q.fonte)}</td></tr>`).join('')}
       </tbody></table>` : vazio('Nenhuma questão registrada ainda.')}</div></section>`;
 
   ligarFiltros(el, estado, redesenhar);
+  el.querySelectorAll('[data-ver-imagem]').forEach((b) => b.addEventListener('click', () => verImagem(b.dataset.verImagem)));
   el.querySelector('[data-nova]').addEventListener('click', () => novaQuestao(m, { cadeiraId: estado.cadeira }));
   el.querySelector('[data-detalhada]').addEventListener('click', () => novaQuestao(m, { cadeiraId: lote.cadeira, assunto: lote.assunto, fonte: lote.fonte }));
   const ler = () => {

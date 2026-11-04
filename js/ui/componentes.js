@@ -147,3 +147,50 @@ export const casa = (texto, termo) =>
   !termo ||
   String(texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .includes(String(termo).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim());
+
+const CHAVE_RECOLHIDOS = 'codigom.recolhidos';
+const lerRecolhidos = () => {
+  try {
+    return JSON.parse(localStorage.getItem(CHAVE_RECOLHIDOS) || '{}');
+  } catch {
+    return {};
+  }
+};
+/** Aberto/fechado lembrado neste navegador (só conforto de tela). */
+export function estaAberto(chave, padrao = true) {
+  const v = lerRecolhidos()[chave];
+  return v === undefined ? padrao : v;
+}
+export function lembrarAberto(el) {
+  el.querySelectorAll('details[data-lembrar]').forEach((d) =>
+    d.addEventListener('toggle', () => {
+      try {
+        const r = lerRecolhidos();
+        r[d.dataset.lembrar] = d.open;
+        localStorage.setItem(CHAVE_RECOLHIDOS, JSON.stringify(r));
+      } catch {
+        /* sem armazenamento */
+      }
+    })
+  );
+}
+
+/** Cartão que abre e fecha (lembra o estado). "extra" fica à direita do título. */
+export function cartaoRecolhivel({ titulo, iconeNome, corpo, extra = '', chave, aberto = true, contagem = '', classe = '' }) {
+  return `
+    <details class="cartao recolhivel ${classe}" data-lembrar="${esc(chave)}" ${estaAberto(chave, aberto) ? 'open' : ''}>
+      <summary class="cartao-topo">
+        <h2>${icone(iconeNome)}<span>${esc(titulo)}</span>${contagem !== '' ? `<small class="contagem-titulo">${esc(contagem)}</small>` : ''}</h2>
+        <span class="cartao-extras">${extra}<span class="seta-recolher">${icone('proximo', 'ic-mini')}</span></span>
+      </summary>
+      <div class="cartao-corpo">${corpo}</div>
+    </details>`;
+}
+
+/** Botão "+" pequeno ao lado do título de uma seção. */
+export const botaoMais = (acao, rotulo) => `<button class="btn-mais" data-mais="${esc(acao)}" title="${esc(rotulo)}" aria-label="${esc(rotulo)}">+</button>`;
+
+/** Impede que cliques em botões do título abram/fechem o cartão. */
+export function botoesNoTitulo(el) {
+  el.querySelectorAll('summary button, summary a, summary input').forEach((b) => b.addEventListener('click', (e) => e.stopPropagation()));
+}

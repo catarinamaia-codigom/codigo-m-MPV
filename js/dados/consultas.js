@@ -5,8 +5,18 @@ import { diasEntre } from '../util/datas.js';
 
 export const cadeiraPorId = (m, id) => m.cadeiras.find((c) => c.id === id);
 export const moduloPorId = (m, id) => m.modulos.find((x) => x.id === id);
-/** Nome da cadeira; se o id for de um módulo (ex.: prova integrada), o nome do módulo. */
-export const nomeCadeira = (m, id) => cadeiraPorId(m, id)?.nome ?? moduloPorId(m, id)?.nome ?? (id || 'Geral');
+/** Período da cadeira (pelo módulo), ex.: "1M". */
+export const periodoCadeira = (m, id) => {
+  const c = cadeiraPorId(m, id);
+  return (c ? moduloPorId(m, c.moduloId)?.periodo : moduloPorId(m, id)?.periodo) || m.config?.periodo || '';
+};
+/** Nome com o período, ex.: "Anatomia 1M". Se o id for de um módulo (prova integrada), o nome do módulo. */
+export const nomeCadeira = (m, id) => {
+  const nome = cadeiraPorId(m, id)?.nome ?? moduloPorId(m, id)?.nome;
+  return nome ? `${nome} ${periodoCadeira(m, id)}`.trim() : id || 'Geral';
+};
+/** Faltas: aulas marcadas como "teve aula" em que não estava presente. */
+export const faltasDaCadeira = (m, cadeiraId) => m.aulas.filter((a) => a.cadeiraId === cadeiraId && a.aconteceu && !a.presente).length;
 
 export const aulasDoDia = (m, data) => m.aulas.filter((a) => a.data === data);
 export const estudosDoDia = (m, data) => m.estudos.filter((e) => e.data === data);
