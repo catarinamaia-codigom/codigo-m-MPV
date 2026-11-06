@@ -1203,3 +1203,7 @@ body.na-capa .ideias { display: none; }
 @media (max-width: 860px) { .ideias { right: 12px; bottom: 12px; } .ideias-botao span { display: none; } }
 .convite { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 4px; }
 .convite input { flex: 1; min-width: 200px; }
+.tag-sigla { background: var(--grafite); color: #fff; font-weight: 700; }
+.convite-nome { min-width: 160px !important; flex: 0.6 !important; }
+.convite-sigla { width: 90px; min-width: 0 !important; flex: 0 0 90px !important; }
+body[data-papel="leitura"] .registrar { display: none; }

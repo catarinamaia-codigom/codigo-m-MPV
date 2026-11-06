@@ -6,7 +6,8 @@ import { abrirFormulario } from '../ui/formulario.js';
 import { aviso } from '../ui/componentes.js';
 import { adicionar, atualizar, emSimulacao, novoId } from '../dados/dataSource.js';
 import { assuntosDaCadeira } from '../regras/dominio.js';
-import { guardarArquivo, previaDestino, reclassificar } from '../dados/arquivos.js';
+import { guardarArquivo, previaDestino, reclassificar, papelAtual, enviarPelaCaixa } from '../dados/arquivos.js';
+import { avisarMudanca } from '../dados/dataSource.js';
 import { nomeCadeira } from '../dados/consultas.js';
 
 
@@ -232,6 +233,8 @@ export function editarMaterial(m, x) {
 
 function formularioMaterial(m, x) {
   const editar = Boolean(x.id);
+  const quem = papelAtual(m);
+  if (quem.papel === 'colaboradora') return formularioColaboradora(m, x, quem);
   const tipos = m.config.tiposMaterial.map((t) => t.nome);
   abrirFormulario({
     titulo: editar ? 'Material' : 'Adicionar material',
@@ -276,6 +279,28 @@ function formularioMaterial(m, x) {
         drive_id: r && !r.simulado ? r.id : '', hash: r?.hash ?? '', nome_original: arquivo?.name ?? '',
       });
       aviso(r && !r.simulado ? `Enviado ao Drive: ${r.destino}` : `Material salvo ${onde()}.`);
+    },
+  });
+}
+
+/** Colaboradora: só envia arquivos (vão para o Drive da Catarina com a sigla). */
+function formularioColaboradora(m, x, quem) {
+  abrirFormulario({
+    titulo: 'Enviar material',
+    intro: `O arquivo vai para o Drive da Catarina, na pasta do assunto, com [${quem.sigla}] no início do nome.`,
+    campos: [
+      { nome: 'arquivo', rotulo: 'Arquivo', tipo: 'arquivo', largo: true, imagem: true },
+      { nome: 'titulo', rotulo: 'Título', largo: true, dica: 'Em branco = nome do arquivo' },
+      { nome: 'tipo', rotulo: 'Tipo', tipo: 'select', opcoes: ops(m.config.tiposMaterial.map((t) => t.nome)), valor: x.tipo },
+      campoCadeira(m, x.cadeiraId ?? ''),
+      campoAssunto(m, x.assunto ?? ''),
+      { nome: 'obs', rotulo: 'Observação', largo: true },
+    ],
+    aoSalvar: async (v, progresso) => {
+      if (!v.arquivo) throw new Error('Escolha um arquivo.');
+      const r = await enviarPelaCaixa(m, v.arquivo, { cadeiraId: v.cadeira_id, assunto: v.assunto, tipo: v.tipo, titulo: v.titulo || v.arquivo.name.replace(/\.[^.]+$/, ''), obs: v.obs, progresso });
+      aviso(r.jaExistia ? 'Este arquivo já estava no Código M.' : 'Enviado ao Drive da Catarina.');
+      avisarMudanca();
     },
   });
 }

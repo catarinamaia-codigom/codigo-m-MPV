@@ -8,6 +8,7 @@ const CHAVE = 'codigom.google.token';
 let token = null;
 let expira = 0;
 let comDrive = false;
+let email = '';
 let cliente = null;
 let renovando = false;
 // Sessão: fica conectada enquanto houver uso; 3 horas sem mexer = sai.
@@ -23,7 +24,7 @@ let scriptCarregado = null;
 
 try {
   const salvo = JSON.parse(sessionStorage.getItem(CHAVE) || 'null');
-  if (salvo && salvo.expira > Date.now()) ({ token, expira, comDrive = false } = salvo);
+  if (salvo && salvo.expira > Date.now()) ({ token, expira, comDrive = false, email = '' } = salvo);
 } catch {
   /* sem armazenamento: só pede login de novo */
 }
@@ -33,6 +34,17 @@ export const conectado = () => Boolean(token) && Date.now() < expira - 60_000;
 export const tokenAtual = () => (conectado() ? token : null);
 /** true se o login deu a permissão do Drive (criar pastas e guardar arquivos). */
 export const temDrive = () => conectado() && comDrive;
+/** E-mail da conta que entrou (minúsculas). */
+export const emailAtual = () => (conectado() ? email : '');
+
+async function buscarEmail() {
+  try {
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: `Bearer ${token}` } });
+    if (r.ok) email = String((await r.json()).email || '').toLowerCase();
+  } catch {
+    /* sem e-mail: trata como dona */
+  }
+}
 
 /** Carrega o script do Google (chamado cedo, para o botão abrir o popup na hora). */
 export function prepararLogin() {
@@ -51,7 +63,7 @@ export function prepararLogin() {
 
 function guardar() {
   try {
-    sessionStorage.setItem(CHAVE, JSON.stringify({ token, expira, comDrive }));
+    sessionStorage.setItem(CHAVE, JSON.stringify({ token, expira, comDrive, email }));
   } catch {
     /* tudo bem */
   }
@@ -110,9 +122,11 @@ export async function entrar() {
       token = r.access_token;
       expira = Date.now() + Number(r.expires_in || 3600) * 1000;
       comDrive = window.google.accounts.oauth2.hasGrantedAllScopes(r, GOOGLE.escopoDrive);
-      guardar();
-      registrarAtividade();
-      ok(token);
+      buscarEmail().finally(() => {
+        guardar();
+        registrarAtividade();
+        ok(token);
+      });
     };
     cliente.error_callback = (e) =>
       erro(new Error(e?.type === 'popup_closed' ? 'A janela de login foi fechada.' : 'O navegador bloqueou a janela de login.'));
@@ -126,6 +140,7 @@ export function sair({ revogar = true } = {}) {
   token = null;
   expira = 0;
   comDrive = false;
+  email = '';
   try {
     sessionStorage.removeItem(CHAVE);
   } catch {

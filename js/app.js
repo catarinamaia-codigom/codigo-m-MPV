@@ -10,6 +10,7 @@ import { formatoLongo, paraISO } from './util/datas.js';
 import { nomeCadeira, pendenciasAbertas } from './dados/consultas.js';
 import { cartoesVencidos } from './telas/metodo.js';
 import { REGISTROS } from './telas/formularios.js';
+import { papelAtual } from './dados/arquivos.js';
 import * as inicio from './telas/inicio.js';
 import * as calendario from './telas/calendario.js';
 import * as cadeiras from './telas/cadeiras.js';
@@ -107,7 +108,15 @@ function montarBarra() {
   });
 }
 
+/** Convidadas: leitura não registra nada; colaboradora só envia materiais. */
+function aplicarPapel() {
+  const p = DEMO ? 'dona' : papelAtual(modelo).papel;
+  document.body.dataset.papel = p;
+  document.querySelectorAll('#registrar-menu [data-registro]').forEach((b) => (b.hidden = p === 'colaboradora' && b.dataset.registro !== 'material'));
+}
+
 function montarAvisos() {
+  aplicarPapel();
   const forcado = modelo.hoje !== paraISO(new Date());
   const simulacao = emSimulacao();
   const conta = google.configurado()

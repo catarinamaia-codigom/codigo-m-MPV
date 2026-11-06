@@ -12,6 +12,7 @@ import { converterBackup } from '../regras/importarAntigo.js';
 import { testar as testarDrive, compartilhar } from '../dados/drive.js';
 import { GOOGLE } from '../config.js';
 import { adicionar } from '../dados/dataSource.js';
+import { papelAtual } from '../dados/arquivos.js';
 
 const INTEGRACOES = (m) => [
   ['Planilha Código M - Dados', emSimulacao() ? (mensagemCarga() ? 'falha' : 'desligada') : 'ligada',
@@ -72,11 +73,14 @@ export function render(el, m) {
       <div class="cartao-corpo">
         <p class="meta">A pessoa recebe um e-mail do Google e passa a <b>ver e baixar</b> a sua planilha e a pasta 20-Medicina. Ela não consegue editar nem excluir arquivos. No Código M, entra com o próprio Google e vê os seus dados só para leitura.</p>
         <form class="convite" data-convite>
-          <input type="email" required placeholder="email@exemplo.com" aria-label="E-mail da pessoa" class="filtro-texto">
+          <input type="email" name="email" required placeholder="email@exemplo.com" aria-label="E-mail da pessoa" class="filtro-texto">
+          <input name="nome" required placeholder="Nome (ex.: Carolaine)" aria-label="Nome" class="filtro-texto convite-nome">
+          <input name="sigla" placeholder="Sigla (ex.: L)" maxlength="3" aria-label="Sigla nos arquivos" class="filtro-texto convite-sigla">
+          <select name="papel" class="filtro-select" aria-label="Acesso"><option value="leitura">Só ver e baixar</option><option value="colaboradora">Colaboradora: ver, baixar e enviar materiais</option></select>
           <button class="btn btn-principal" type="submit" ${google.temDrive() ? '' : 'disabled title="Precisa da permissão do Drive"'}>Enviar convite</button>
         </form>
         <p class="meta" id="convite-resultado"></p>
-        ${m.convites.length ? `<ul class="lista-simples">${m.convites.map((c) => `<li><b>${esc(c.email)}</b><span class="meta">${esc(c.papel)} · ${c.convidadoEm ? esc(c.convidadoEm.split('-').reverse().join('/')) : ''} · ${esc(c.status)}</span></li>`).join('')}</ul>` : ''}
+        ${m.convites.length ? `<ul class="lista-simples">${m.convites.map((c) => `<li><b>${c.sigla ? `<span class="tag tag-sigla">${esc(c.sigla)}</span> ` : ''}${esc(c.nome || c.email)}</b><span class="meta">${esc(c.email)} · ${esc(c.papel)} · ${c.convidadoEm ? esc(c.convidadoEm.split('-').reverse().join('/')) : ''}</span></li>`).join('')}</ul>` : ''}
         <details class="passos"><summary>Etapa manual no Google Cloud (para cada convidado)</summary>
           <ol>
             <li>Abra <a href="https://console.cloud.google.com/auth/audience" target="_blank" rel="noopener">Google Cloud › Google Auth Platform › Público-alvo</a> no projeto do Código M.</li>
@@ -86,15 +90,33 @@ export function render(el, m) {
           </ol>
         </details>
       </div></section>
+    ${papelAtual(m).papel === 'dona' ? `<section class="cartao"><header class="cartao-topo"><h2>${icone('nuvem')}<span>Caixa de envio das colaboradoras</span></h2>
+      <span class="tag ${m.config.caixaUrl ? 'tag-ok' : 'tag-alerta'}">${m.config.caixaUrl ? 'ligada' : 'desligada'}</span></header>
+      <div class="cartao-corpo">
+        <p class="meta">Quem é colaboradora envia arquivos pelo Código M; um script na <b>sua</b> conta grava no <b>seu</b> Drive, na pasta do assunto, com a sigla dela no início do nome (ex.: <code>[L] [1M] [Resumo] [Anatomia] …</code>). Ela continua só com leitura. Limite de 35 MB por arquivo.</p>
+        <form class="convite" data-caixa><input name="url" type="url" required class="filtro-texto" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(m.config.caixaUrl)}" aria-label="Endereço da caixa de envio"><button class="btn btn-principal" type="submit">Salvar endereço</button></form>
+        <details class="passos"><summary>Como ligar a caixa de envio (uma vez só, uns 5 minutos)</summary>
+          <ol>
+            <li>Abra <a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">script.google.com › Novo projeto</a> com a <b>sua</b> conta pessoal.</li>
+            <li>Apague o que estiver lá, clique em <button class="link-botao" data-copiar-script>copiar o código</button> e cole. Dê o nome “Código M - Caixa de envio” e salve.</li>
+            <li>Clique em <b>Implantar › Nova implantação</b>, tipo <b>App da Web</b>. Em “Executar como” escolha <b>Eu</b>; em “Quem pode acessar”, <b>Qualquer pessoa</b> (o site precisa disso para falar com o script; quem entra é conferido pelo login do Google e pela aba Convites). Implantar.</li>
+            <li>Autorize o acesso (é a sua conta acessando o seu Drive e a sua planilha). Se aparecer “app não verificado”, clique em <b>Avançado › Acessar</b>.</li>
+            <li>Copie o <b>URL do app da Web</b> (termina em <code>/exec</code>), cole acima e salve.</li>
+          </ol>
+        </details>
+      </div></section>` : ''}
     <section class="cartao"><header class="cartao-topo"><h2>${icone('ia')}<span>Atalhos de IA (aba Config)</span></h2></header>
       <div class="cartao-corpo"><ul class="lista-simples empilhada">${m.config.atalhosIA.map((a) => `<li><b>${esc(a.nome)}</b><span class="meta">${esc(a.prompt.slice(0, 160))}${a.prompt.length > 160 ? '…' : ''}</span></li>`).join('')}</ul></div></section>`;
 
   el.querySelector('[data-entrar]')?.addEventListener('click', () => document.getElementById('entrar')?.click());
   el.querySelector('[data-convite]').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const entrada = e.target.querySelector('input');
+    const f = e.target.elements;
     const botao = e.target.querySelector('button');
-    const email = entrada.value.trim().toLowerCase();
+    const email = f.email.value.trim().toLowerCase();
+    const papel = f.papel.value;
+    const nome = f.nome.value.trim();
+    const sigla = (f.sigla.value.trim() || nome.charAt(0)).toUpperCase();
     const r = el.querySelector('#convite-resultado');
     if (m.convites.some((c) => c.email.toLowerCase() === email)) {
       r.textContent = 'Este e-mail já foi convidado.';
@@ -103,16 +125,30 @@ export function render(el, m) {
     botao.disabled = true;
     r.textContent = 'Enviando convite…';
     const site = location.origin + location.pathname;
-    const msg = `Catarina convidou você para o Código M (estúdio de Medicina). Acesse ${site} e entre com este e-mail do Google. Você pode ver e baixar os materiais, sem editar nem excluir.`;
+    const msg = `Catarina convidou você para o Código M (estúdio de Medicina). Acesse ${site} e entre com este e-mail do Google. Você pode ver e baixar os materiais${papel === 'colaboradora' ? ' e enviar novos materiais pelo botão "+ Registrar › Material"' : ''}, sem editar nem excluir.`;
     try {
       await compartilhar(GOOGLE.planilhaId, email, msg);
       await compartilhar(GOOGLE.pastas.medicina, email, msg);
-      await adicionar('Convites', { email, convidado_em: m.hoje, papel: 'leitura', status: 'Convidado', obs: 'Falta adicionar nos usuários de teste do Google Cloud' });
+      await adicionar('Convites', { email, nome, sigla, convidado_em: m.hoje, papel, status: 'Convidado', obs: 'Falta adicionar nos usuários de teste do Google Cloud' });
       aviso(`Convite enviado para ${email}. Falta a etapa manual no Google Cloud.`);
     } catch (falha) {
       r.innerHTML = `<b class="alerta-texto">Não enviou:</b> ${esc(falha.message)}`;
       botao.disabled = false;
     }
+  });
+  el.querySelector('[data-caixa]')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await adicionar('Config', { grupo: 'caixa', chave: 'url', valor: e.target.elements.url.value.trim(), obs: 'Caixa de envio das colaboradoras' });
+      aviso('Endereço da caixa de envio salvo.');
+    } catch (falha) {
+      aviso(falha.message);
+    }
+  });
+  el.querySelector('[data-copiar-script]')?.addEventListener('click', async () => {
+    const codigo = await (await fetch('ferramentas/caixa-de-envio.gs', { cache: 'no-cache' })).text();
+    await navigator.clipboard.writeText(codigo);
+    aviso('Código copiado. Cole no editor do Apps Script.');
   });
   el.querySelector('[data-testar-drive]')?.addEventListener('click', async (e) => {
     const r = el.querySelector('#drive-resultado');

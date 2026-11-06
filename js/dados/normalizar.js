@@ -61,6 +61,7 @@ export function lerConfig(linhas = []) {
       ? grupos.motivo_questao.map((i) => i.chave).filter(Boolean)
       : ['Não sabia o conteúdo', 'Confundi conceitos', 'Li errado / desatenção', 'Esqueci', 'Interpretação do enunciado', 'Necessita aprofundamento'],
     origensMaterial: ['Minha', 'Turma', 'Professor', 'Livro', 'IA'],
+    caixaUrl: txt(mapa('caixa').url),
     notas: {
       mediaAprovacao: num(mapa('notas').media_aprovacao, 7),
       mediaFinal: num(mapa('notas').media_final, 5),
@@ -236,6 +237,7 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
         driveId,
         hash: txt(x.hash),
         nomeOriginal: txt(x.nome_original),
+        autor: txt(x.autor),
       };
     })
     .filter((x) => x.id && (x.titulo || x.link))
@@ -268,7 +270,7 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
     .filter((r) => r.data && r.cartaoId && r.nota >= 1);
 
   const convites = (abas.Convites ?? [])
-    .map((c) => ({ email: txt(c.email), convidadoEm: normalizarData(c.convidado_em), papel: txt(c.papel) || 'leitura', status: txt(c.status), obs: txt(c.obs) }))
+    .map((c) => ({ email: txt(c.email).toLowerCase(), nome: txt(c.nome), sigla: txt(c.sigla), convidadoEm: normalizarData(c.convidado_em), papel: txt(c.papel).toLowerCase() || 'leitura', status: txt(c.status), obs: txt(c.obs) }))
     .filter((c) => c.email);
 
   const visivel = (x) => turmaVisivel(x.turma, config.turmasVisiveis);

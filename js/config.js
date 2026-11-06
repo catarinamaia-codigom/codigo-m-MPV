@@ -19,4 +19,6 @@ export const GOOGLE = {
     caixa: '17_NUvR4MrzjWHOpzvZNRY2hxBs7GfOgu', // 90-Entrada/Caixa
   },
 };
-GOOGLE.escopos = `${GOOGLE.escopoPlanilha} ${GOOGLE.escopoDrive}`;
+// E-mail do login: identifica convidadas (leitura ou colaboradora)
+GOOGLE.escopoEmail = 'https://www.googleapis.com/auth/userinfo.email';
+GOOGLE.escopos = `${GOOGLE.escopoPlanilha} ${GOOGLE.escopoDrive} ${GOOGLE.escopoEmail}`;

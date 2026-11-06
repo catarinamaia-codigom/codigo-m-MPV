@@ -26,7 +26,7 @@ export function linhaMaterial(m, x, { mostrarCadeira = true, mostrarAssunto = fa
         <p class="meta">${esc(x.tipo)}${onde ? ` · ${esc(onde)}` : ''}${x.criado ? ` · ${formatoCurto(x.criado)}` : ''}${x.obs ? ` · ${esc(x.obs)}` : ''}</p>
       </div>
       ${x.driveId ? `<span class="tag tag-ok" title="Guardado no Drive">${icone('nuvem', 'ic-mini')} Drive</span>` : ''}
-      <span class="tag ${x.origem === 'Turma' ? 'tag-turma' : ''}">${esc(x.origem)}</span>
+      ${x.autor ? `<span class="tag tag-sigla" title="Enviado por colaboradora">${esc(x.autor)}</span>` : `<span class="tag ${x.origem === 'Turma' ? 'tag-turma' : ''}">${esc(x.origem)}</span>`}
       ${x.origem === 'Turma' ? `<label class="copiado" title="Já copiei para a minha pasta"><input type="checkbox" data-copiado="${esc(x.id)}" ${x.copiado ? 'checked' : ''}> copiado</label>` : ''}
       <button class="btn-mini" data-editar-material="${esc(x.id)}" title="Editar ou mudar de lugar" aria-label="Editar ${esc(x.titulo)}">${icone('anotacao', 'ic-mini')}</button>
     </li>`;
@@ -53,7 +53,7 @@ export function render(el, m) {
   const lista = m.materiais.filter(
     (x) =>
       (!estado.cadeira || x.cadeiraId === estado.cadeira) &&
-      (estado.origem === 'todas' || (estado.origem === 'minhas') === (x.origem !== 'Turma')) &&
+      (estado.origem === 'todas' || (estado.origem === 'colab' ? Boolean(x.autor) : estado.origem === 'minhas' ? x.origem !== 'Turma' && !x.autor : x.origem === 'Turma')) &&
       (!estado.tipo || x.tipo === estado.tipo) &&
       casa(`${x.titulo} ${x.assunto} ${x.tipo} ${x.obs}`, estado.busca)
   );
@@ -78,7 +78,7 @@ export function render(el, m) {
       ${kpi({ rotulo: 'Guardados no Drive', valor: m.materiais.filter((x) => x.driveId).length, sub: 'enviados pelo Código M ou pelo Classroom' })}
     </div>
     <div class="filtros">
-      ${chips('origem', [['todas', 'Todos'], ['minhas', 'Meus'], ['turma', 'Da turma']], estado.origem)}
+      ${chips('origem', [['todas', 'Todos'], ['minhas', 'Meus'], ['turma', 'Da turma'], ['colab', 'Colaboradoras']], estado.origem)}
       ${chips('tipo', [['', 'Todos os tipos'], ...m.config.tiposMaterial.map((t) => [t.nome, t.nome])], estado.tipo)}
       ${seletorCadeira(m, estado.cadeira)}
       <input class="filtro-texto" type="search" placeholder="Buscar materiais" data-filtro-texto="busca" value="${esc(estado.busca)}">

@@ -19,10 +19,10 @@ export const COLUNAS = {
   Duvidas: ['id', 'criada', 'cadeira_id', 'assunto', 'pergunta', 'motivo', 'tentativa', 'resposta', 'fonte', 'link', 'status', 'sanada_em', 'imagem'],
   Questoes: ['id', 'data', 'cadeira_id', 'assunto', 'fonte', 'resultado', 'confianca', 'motivos', 'obs', 'imagem'],
   Notas: ['id', 'cadeira_id', 'avaliacao_id', 'nome', 'vale', 'peso', 'nota', 'bonus', 'obs'],
-  Materiais: ['id', 'criado', 'cadeira_id', 'assunto', 'tipo', 'titulo', 'link', 'origem', 'copiado', 'obs', 'drive_id', 'hash', 'nome_original'],
+  Materiais: ['id', 'criado', 'cadeira_id', 'assunto', 'tipo', 'titulo', 'link', 'origem', 'copiado', 'obs', 'drive_id', 'hash', 'nome_original', 'autor'],
   Cartoes: ['id', 'criado', 'cadeira_id', 'assunto', 'frente', 'verso', 'fonte', 'origem', 'vence', 'estabilidade', 'dificuldade', 'revisoes', 'lapsos', 'ultima', 'imagem_frente', 'imagem_verso'],
   Revisoes: ['data', 'cartao_id', 'nota', 'intervalo'],
-  Convites: ['email', 'convidado_em', 'papel', 'status', 'obs'],
+  Convites: ['email', 'convidado_em', 'papel', 'status', 'obs', 'nome', 'sigla'],
 };
 export const ABAS = Object.keys(COLUNAS);
 
