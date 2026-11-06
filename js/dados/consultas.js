@@ -34,9 +34,13 @@ export function proximasAvaliacoes(m, limite = 6) {
 }
 
 /** Pendências abertas, atrasadas primeiro, depois por prazo. */
+/** Ideias anotadas na caixinha (ficam em Pendências › Ideias). */
+export const ehIdeia = (p) => /^Ideia:/i.test(p.descricao);
+export const ideiasAbertas = (m) => m.pendencias.filter((p) => !p.feita && ehIdeia(p));
+
 export function pendenciasAbertas(m) {
   return m.pendencias
-    .filter((p) => !p.feita)
+    .filter((p) => !p.feita && !ehIdeia(p))
     .map((p) => ({ ...p, faltam: p.prazo ? diasEntre(m.hoje, p.prazo) : null }))
     .sort((a, b) => (a.faltam ?? 999) - (b.faltam ?? 999));
 }

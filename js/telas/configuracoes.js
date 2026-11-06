@@ -9,7 +9,9 @@ import { aviso } from '../ui/componentes.js';
 import { emSimulacao, linkPlanilha, adicionarVarias, mensagemCarga } from '../dados/dataSource.js';
 import * as google from '../dados/google.js';
 import { converterBackup } from '../regras/importarAntigo.js';
-import { testar as testarDrive } from '../dados/drive.js';
+import { testar as testarDrive, compartilhar } from '../dados/drive.js';
+import { GOOGLE } from '../config.js';
+import { adicionar } from '../dados/dataSource.js';
 
 const INTEGRACOES = (m) => [
   ['Planilha Código M - Dados', emSimulacao() ? (mensagemCarga() ? 'falha' : 'desligada') : 'ligada',
@@ -66,10 +68,52 @@ export function render(el, m) {
           </ol>
         </details>
       </div></section>
+    <section class="cartao"><header class="cartao-topo"><h2>${icone('pessoa')}<span>Convidar pessoas</span></h2></header>
+      <div class="cartao-corpo">
+        <p class="meta">A pessoa recebe um e-mail do Google e passa a <b>ver e baixar</b> a sua planilha e a pasta 20-Medicina. Ela não consegue editar nem excluir arquivos. No Código M, entra com o próprio Google e vê os seus dados só para leitura.</p>
+        <form class="convite" data-convite>
+          <input type="email" required placeholder="email@exemplo.com" aria-label="E-mail da pessoa" class="filtro-texto">
+          <button class="btn btn-principal" type="submit" ${google.temDrive() ? '' : 'disabled title="Precisa da permissão do Drive"'}>Enviar convite</button>
+        </form>
+        <p class="meta" id="convite-resultado"></p>
+        ${m.convites.length ? `<ul class="lista-simples">${m.convites.map((c) => `<li><b>${esc(c.email)}</b><span class="meta">${esc(c.papel)} · ${c.convidadoEm ? esc(c.convidadoEm.split('-').reverse().join('/')) : ''} · ${esc(c.status)}</span></li>`).join('')}</ul>` : ''}
+        <details class="passos"><summary>Etapa manual no Google Cloud (para cada convidado)</summary>
+          <ol>
+            <li>Abra <a href="https://console.cloud.google.com/auth/audience" target="_blank" rel="noopener">Google Cloud › Google Auth Platform › Público-alvo</a> no projeto do Código M.</li>
+            <li>Em <b>Usuários de teste</b>, clique em <b>Adicionar usuários</b>, cole o e-mail convidado e salve. Sem isso, o Google não deixa a pessoa entrar enquanto o app está “Em teste” (limite de 100 pessoas).</li>
+            <li>Pronto: o convite enviado aqui já dá a ela acesso de leitura à planilha e à pasta. Na primeira entrada ela verá o aviso “o Google não verificou este app” e clica em <b>Avançado › Acessar</b>.</li>
+            <li>Para tirar o acesso: no Drive, em <b>Compartilhar</b> da planilha e da pasta 20-Medicina, remova o e-mail; e tire-o dos usuários de teste.</li>
+          </ol>
+        </details>
+      </div></section>
     <section class="cartao"><header class="cartao-topo"><h2>${icone('ia')}<span>Atalhos de IA (aba Config)</span></h2></header>
       <div class="cartao-corpo"><ul class="lista-simples empilhada">${m.config.atalhosIA.map((a) => `<li><b>${esc(a.nome)}</b><span class="meta">${esc(a.prompt.slice(0, 160))}${a.prompt.length > 160 ? '…' : ''}</span></li>`).join('')}</ul></div></section>`;
 
   el.querySelector('[data-entrar]')?.addEventListener('click', () => document.getElementById('entrar')?.click());
+  el.querySelector('[data-convite]').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const entrada = e.target.querySelector('input');
+    const botao = e.target.querySelector('button');
+    const email = entrada.value.trim().toLowerCase();
+    const r = el.querySelector('#convite-resultado');
+    if (m.convites.some((c) => c.email.toLowerCase() === email)) {
+      r.textContent = 'Este e-mail já foi convidado.';
+      return;
+    }
+    botao.disabled = true;
+    r.textContent = 'Enviando convite…';
+    const site = location.origin + location.pathname;
+    const msg = `Catarina convidou você para o Código M (estúdio de Medicina). Acesse ${site} e entre com este e-mail do Google. Você pode ver e baixar os materiais, sem editar nem excluir.`;
+    try {
+      await compartilhar(GOOGLE.planilhaId, email, msg);
+      await compartilhar(GOOGLE.pastas.medicina, email, msg);
+      await adicionar('Convites', { email, convidado_em: m.hoje, papel: 'leitura', status: 'Convidado', obs: 'Falta adicionar nos usuários de teste do Google Cloud' });
+      aviso(`Convite enviado para ${email}. Falta a etapa manual no Google Cloud.`);
+    } catch (falha) {
+      r.innerHTML = `<b class="alerta-texto">Não enviou:</b> ${esc(falha.message)}`;
+      botao.disabled = false;
+    }
+  });
   el.querySelector('[data-testar-drive]')?.addEventListener('click', async (e) => {
     const r = el.querySelector('#drive-resultado');
     e.target.disabled = true;

@@ -2,7 +2,8 @@
 
 import { carregar, emSimulacao, mensagemCarga, acabouDePreencher, linkPlanilha } from './dados/dataSource.js';
 import * as google from './dados/google.js';
-import { aviso } from './ui/componentes.js';
+import { aviso, abrirModal, fecharModal } from './ui/componentes.js';
+import { adicionar, novoId } from './dados/dataSource.js';
 import { icone } from './ui/icones.js';
 import { esc } from './util/texto.js';
 import { formatoLongo, paraISO } from './util/datas.js';
@@ -145,6 +146,74 @@ function montarAvisos() {
   }
 }
 
+/** Volta para a capa e avisa, no meio da tela, que é preciso entrar de novo. */
+function encerrarSessao() {
+  google.sair({ revogar: false });
+  mostrarCapa();
+  abrirModal('Sessão encerrada', `
+    <div class="sessao-fim">
+      <p>Por inatividade, você precisa entrar novamente.</p>
+      <button class="btn btn-principal capa-entrar" data-reentrar>${icone('pessoa')} Entrar com Google</button>
+    </div>`);
+  document.querySelector('[data-reentrar]').addEventListener('click', () => {
+    fecharModal();
+    entrarComGoogle();
+  });
+}
+
+// Uso do site mantém a sessão e renova o acesso do Google; 3 h parado = sai.
+['pointerdown', 'keydown'].forEach((ev) =>
+  document.addEventListener(ev, () => {
+    if (!google.conectado()) return;
+    google.registrarAtividade();
+    google.renovarNoGesto();
+  }, true)
+);
+setInterval(() => {
+  if (DEMO || !comecou || !elCapa.hidden) return;
+  if (google.inativo() || !google.conectado()) encerrarSessao();
+}, 30_000);
+
+/** Caixinha fixa de ideias: vira pendência para decidir depois. */
+function montarIdeias() {
+  const caixa = document.createElement('aside');
+  caixa.className = 'ideias';
+  caixa.innerHTML = `
+    <button class="ideias-botao" aria-expanded="false" aria-controls="ideias-painel" title="Anotar ideia de melhoria">${icone('lampada')}<span>Ideia</span></button>
+    <form class="ideias-painel" id="ideias-painel" hidden>
+      <label for="ideias-texto">Ideia ou melhoria para o Código M</label>
+      <textarea id="ideias-texto" rows="3" placeholder="Escreva rápido para não perder…" required></textarea>
+      <div class="ideias-acoes"><span class="meta">Vai para Pendências › Ideias</span><button class="btn btn-principal" type="submit">Guardar</button></div>
+    </form>`;
+  document.body.appendChild(caixa);
+  const botao = caixa.querySelector('.ideias-botao');
+  const painel = caixa.querySelector('form');
+  const texto = caixa.querySelector('textarea');
+  botao.addEventListener('click', () => {
+    painel.hidden = !painel.hidden;
+    botao.setAttribute('aria-expanded', String(!painel.hidden));
+    if (!painel.hidden) texto.focus();
+  });
+  texto.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) painel.requestSubmit();
+    if (e.key === 'Escape') botao.click();
+  });
+  painel.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ideia = texto.value.trim();
+    if (!ideia) return;
+    const tela = document.getElementById('trilha').textContent.replace(/\s+/g, ' ').trim();
+    try {
+      await adicionar('Pendencias', { id: novoId('IDEIA'), descricao: `Ideia: ${ideia}${tela ? ` (tela: ${tela})` : ''}`, cadeira_id: '', prazo: '', status: 'Aberta', prioridade: 'Baixa' });
+      texto.value = '';
+      botao.click();
+      aviso('Ideia guardada em Pendências › Ideias.');
+    } catch (erro) {
+      aviso(erro.message);
+    }
+  });
+}
+
 /** Capa: primeira tela, pede o login com o Google. */
 function mostrarCapa(mensagem = '') {
   document.body.classList.add('na-capa');
@@ -196,8 +265,7 @@ async function recarregar({ rolarTopo = true } = {}) {
     return;
   }
   if (emSimulacao() && !DEMO) {
-    google.sair();
-    mostrarCapa(mensagemCarga() || 'Entre de novo para continuar.');
+    encerrarSessao();
     return;
   }
   montarAvisos();
@@ -251,12 +319,13 @@ async function comecar() {
     return;
   }
   if (emSimulacao() && !DEMO) {
-    google.sair();
+    google.sair({ revogar: false });
     mostrarCapa(mensagemCarga() || 'Entre com Google para continuar.');
     comecou = false;
     return;
   }
   montarAvisos();
+  if (!document.querySelector('.ideias')) montarIdeias();
   // Conta os passos para o botão Voltar saber se há para onde voltar
   history.replaceState({ passo: 0 }, '');
   window.addEventListener('popstate', (e) => (profundidade = e.state?.passo ?? Math.max(0, profundidade - 1)));

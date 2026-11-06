@@ -267,6 +267,10 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
     .map((r) => ({ data: normalizarData(r.data), cartaoId: txt(r.cartao_id), nota: num(r.nota, 0), intervalo: num(r.intervalo, 0) }))
     .filter((r) => r.data && r.cartaoId && r.nota >= 1);
 
+  const convites = (abas.Convites ?? [])
+    .map((c) => ({ email: txt(c.email), convidadoEm: normalizarData(c.convidado_em), papel: txt(c.papel) || 'leitura', status: txt(c.status), obs: txt(c.obs) }))
+    .filter((c) => c.email);
+
   const visivel = (x) => turmaVisivel(x.turma, config.turmasVisiveis);
 
   return {
@@ -287,5 +291,6 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
     materiais,
     cartoes,
     revisoes,
+    convites,
   };
 }

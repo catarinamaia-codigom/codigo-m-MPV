@@ -22,15 +22,21 @@ export const COLUNAS = {
   Materiais: ['id', 'criado', 'cadeira_id', 'assunto', 'tipo', 'titulo', 'link', 'origem', 'copiado', 'obs', 'drive_id', 'hash', 'nome_original'],
   Cartoes: ['id', 'criado', 'cadeira_id', 'assunto', 'frente', 'verso', 'fonte', 'origem', 'vence', 'estabilidade', 'dificuldade', 'revisoes', 'lapsos', 'ultima', 'imagem_frente', 'imagem_verso'],
   Revisoes: ['data', 'cartao_id', 'nota', 'intervalo'],
+  Convites: ['email', 'convidado_em', 'papel', 'status', 'obs'],
 };
 export const ABAS = Object.keys(COLUNAS);
 
 /** Abas que NÃO recebem os dados de exemplo do JSON (começam vazias na planilha). */
-const ABAS_SEM_EXEMPLO = ['Estudos', 'Pendencias', 'Duvidas', 'Questoes', 'Notas', 'Materiais', 'Cartoes', 'Revisoes'];
+const ABAS_SEM_EXEMPLO = ['Estudos', 'Pendencias', 'Duvidas', 'Questoes', 'Notas', 'Materiais', 'Cartoes', 'Revisoes', 'Convites'];
 
 const API = 'https://sheets.googleapis.com/v4/spreadsheets';
 
 export class ErroLogin extends Error {}
+
+// Convidados com acesso só de leitura: a planilha já está pronta, segue lendo.
+const somenteLeitura = (e) => {
+  if (!/só de leitura/.test(e.message)) throw e;
+};
 
 /**
  * Converte o retorno da API do Sheets (lista de linhas, a 1ª é o cabeçalho)
@@ -106,6 +112,9 @@ export class SheetsAdapter {
       body: body ? JSON.stringify(body) : undefined,
     });
     if (resp.status === 401) throw new ErroLogin('O login expirou. Entre com Google de novo.');
+    if (resp.status === 403 && method !== 'GET') {
+      throw new Error('Sua conta tem acesso só de leitura ao Código M: não dá para gravar.');
+    }
     if (resp.status === 403 || resp.status === 404) {
       throw new ErroLogin('Esta conta Google não tem acesso à planilha do Código M. Entre com a conta dona da planilha.');
     }
@@ -145,7 +154,7 @@ export class SheetsAdapter {
       faltando.shift();
     }
     for (const aba of faltando) pedidos.push({ addSheet: { properties: { title: aba } } });
-    if (pedidos.length) await this.req(':batchUpdate', { method: 'POST', body: { requests: pedidos } });
+    if (pedidos.length) await this.req(':batchUpdate', { method: 'POST', body: { requests: pedidos } }).catch(somenteLeitura);
 
     // Lê a 1ª linha (cabeçalho) de todas as abas
     const ranges = ABAS.map((a) => `ranges=${encodeURIComponent(`${aspas(a)}!1:1`)}`).join('&');
@@ -161,7 +170,7 @@ export class SheetsAdapter {
       return faltam.length ? [{ range: `${aspas(aba)}!${letraColuna(cab.length)}1`, values: [faltam] }] : [];
     });
     if (colunasNovas.length) {
-      await this.req('/values:batchUpdate', { method: 'POST', body: { valueInputOption: 'RAW', data: colunasNovas } });
+      await this.req('/values:batchUpdate', { method: 'POST', body: { valueInputOption: 'RAW', data: colunasNovas } }).catch(somenteLeitura);
     }
     if (!vazias.length) return false;
 

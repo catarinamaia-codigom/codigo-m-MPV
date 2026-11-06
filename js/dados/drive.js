@@ -179,3 +179,12 @@ export function mostrarImagens(el) {
     }
   });
 }
+
+/**
+ * Compartilha um arquivo ou pasta com um e-mail (convite). Papel "reader":
+ * pode ver e baixar, não pode editar nem excluir. O Google envia o e-mail.
+ */
+export async function compartilhar(id, email, mensagem) {
+  const url = `${API}/${id}/permissions?sendNotificationEmail=true&emailMessage=${encodeURIComponent(mensagem)}&fields=id`;
+  return req(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'user', role: 'reader', emailAddress: email }) });
+}

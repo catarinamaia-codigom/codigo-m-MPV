@@ -5,7 +5,7 @@ import { formatoCurto, contagemDias } from '../util/datas.js';
 import { icone } from '../ui/icones.js';
 import { chips, seletorCadeira, ligarFiltros, vazio, aviso } from '../ui/componentes.js';
 import { atualizar } from '../dados/dataSource.js';
-import { nomeCadeira, pendenciasAbertas } from '../dados/consultas.js';
+import { nomeCadeira, pendenciasAbertas, ideiasAbertas } from '../dados/consultas.js';
 import { novaPendencia } from './formularios.js';
 
 const estado = { status: 'abertas', cadeira: '' };
@@ -13,8 +13,9 @@ const estado = { status: 'abertas', cadeira: '' };
 export function render(el, m) {
   const redesenhar = () => render(el, m);
   const abertas = pendenciasAbertas(m);
+  const ideias = ideiasAbertas(m);
   const feitas = m.pendencias.filter((p) => p.feita);
-  const base = estado.status === 'abertas' ? abertas : feitas;
+  const base = estado.status === 'abertas' ? abertas : estado.status === 'ideias' ? ideias : feitas;
   const lista = base.filter((p) => !estado.cadeira || p.cadeiraId === estado.cadeira);
 
   el.innerHTML = `
@@ -23,7 +24,7 @@ export function render(el, m) {
       <div class="acoes-topo"><button class="btn btn-principal" data-nova>${icone('pendencias', 'ic-mini')} + Pendência</button></div>
     </header>
     <div class="filtros">
-      ${chips('status', [['abertas', `Abertas (${abertas.length})`], ['feitas', `Feitas (${feitas.length})`]], estado.status)}
+      ${chips('status', [['abertas', `Abertas (${abertas.length})`], ['ideias', `Ideias (${ideias.length})`], ['feitas', `Feitas (${feitas.length})`]], estado.status)}
       ${seletorCadeira(m, estado.cadeira)}
     </div>
     <section class="cartao"><div class="cartao-corpo">

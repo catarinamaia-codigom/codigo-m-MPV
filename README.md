@@ -25,6 +25,9 @@ Site estático (HTML, CSS e JavaScript puros, sem build), publicado de graça no
 - **Materiais**: links por cadeira e assunto, ícone por tipo, material da turma com check "copiado".
 - **Configurações**: situação de cada integração e importação do backup do Código M antigo (ChatGPT).
 - **Capa com login**: o site abre numa capa que pede **Entrar com Google**; sem login não mostra dados.
+- **Sessão**: fica conectada enquanto houver uso (o acesso do Google é renovado sozinho); 3 horas sem mexer ou queda do acesso = volta à capa com aviso no meio da tela.
+- **Ideias**: caixinha fixa no canto inferior direito; cada ideia vira pendência em Pendências › Ideias.
+- **Convites** (Configurações): compartilha a planilha e a pasta 20-Medicina só para leitura e registra na aba `Convites`; falta adicionar o e-mail nos usuários de teste do Google Cloud.
 - **Demonstração**: acrescente `?demo` ao endereço para abrir com dados de exemplo (nada é salvo).
 - Com **Entrar com Google**, tudo grava na planilha "Código M - Dados". As abas novas são criadas
   sozinhas no próximo login (veja `docs/PLANILHA.md`).
