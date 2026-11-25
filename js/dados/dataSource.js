@@ -79,6 +79,12 @@ export async function atualizar(aba, id, campos, { silencioso = false } = {}) {
   if (!silencioso) avisarMudanca();
 }
 
+/** Muitas linhas de uma aba de uma vez (ex.: renomear assunto). mudancas: [{id, campos}] */
+export async function atualizarVarias(aba, mudancas, { silencioso = false } = {}) {
+  await adaptador.atualizarVarias(aba, mudancas);
+  if (!silencioso) avisarMudanca();
+}
+
 /** Gera um id curto e único para novas linhas (ex.: "AV-lq3k9x"). */
 let ultimoId = 0;
 export const novoId = (prefixo) => {

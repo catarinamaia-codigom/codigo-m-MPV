@@ -13,8 +13,11 @@ export const periodoCadeira = (m, id) => {
 /** Nome com o período, ex.: "Anatomia 1M". Se o id for de um módulo (prova integrada), o nome do módulo. */
 export const nomeCadeira = (m, id) => {
   const nome = cadeiraPorId(m, id)?.nome ?? moduloPorId(m, id)?.nome;
+  if (nome && ehZona(m, id)) return nome; // zona de interesse: sem período
   return nome ? `${nome} ${periodoCadeira(m, id)}`.trim() : id || 'Geral';
 };
+/** A cadeira (ou módulo) é de uma zona de interesse própria, fora do curso? */
+export const ehZona = (m, id) => Boolean((moduloPorId(m, cadeiraPorId(m, id)?.moduloId) ?? moduloPorId(m, id))?.tipo);
 /** Faltas: aulas marcadas como "teve aula" em que não estava presente. */
 export const faltasDaCadeira = (m, cadeiraId) => m.aulas.filter((a) => a.cadeiraId === cadeiraId && a.aconteceu && !a.presente).length;
 

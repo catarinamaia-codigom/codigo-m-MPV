@@ -8,26 +8,28 @@
 /** Abas da planilha e suas colunas (a 1ª linha de cada aba é este cabeçalho). */
 export const COLUNAS = {
   Config: ['grupo', 'chave', 'valor', 'obs'],
-  Modulos: ['id', 'periodo', 'nome', 'ordem'],
+  Modulos: ['id', 'periodo', 'nome', 'ordem', 'tipo'],
   Cadeiras: ['id', 'modulo_id', 'nome', 'ordem'],
   Aulas: ['id', 'data', 'inicio', 'fim', 'cadeira_id', 'assunto', 'tipo', 'turma', 'local', 'professor', 'aconteceu', 'presente'],
   Avaliacoes: ['id', 'data', 'hora', 'fim', 'cadeira_id', 'titulo', 'tipo', 'conteudo', 'turma', 'local', 'obs', 'link', 'vale', 'nota', 'entrega'],
-  Estudos: ['id', 'data', 'inicio', 'fim', 'cadeira_id', 'assunto', 'atividade', 'feito'],
+  Estudos: ['id', 'data', 'inicio', 'fim', 'cadeira_id', 'assunto', 'atividade', 'feito', 'tipo', 'obs', 'avaliacao_id'],
   Pendencias: ['id', 'descricao', 'cadeira_id', 'prazo', 'status', 'prioridade'],
   Feriados: ['data', 'nome'],
   // Etapa 3 — estudo ativo
-  Duvidas: ['id', 'criada', 'cadeira_id', 'assunto', 'pergunta', 'motivo', 'tentativa', 'resposta', 'fonte', 'link', 'status', 'sanada_em', 'imagem'],
+  Duvidas: ['id', 'criada', 'cadeira_id', 'assunto', 'pergunta', 'motivo', 'tentativa', 'resposta', 'fonte', 'link', 'status', 'sanada_em', 'imagem', 'material_id', 'assuntos_extra'],
   Questoes: ['id', 'data', 'cadeira_id', 'assunto', 'fonte', 'resultado', 'confianca', 'motivos', 'obs', 'imagem'],
   Notas: ['id', 'cadeira_id', 'avaliacao_id', 'nome', 'vale', 'peso', 'nota', 'bonus', 'obs'],
-  Materiais: ['id', 'criado', 'cadeira_id', 'assunto', 'tipo', 'titulo', 'link', 'origem', 'copiado', 'obs', 'drive_id', 'hash', 'nome_original', 'autor'],
+  Materiais: ['id', 'criado', 'cadeira_id', 'assunto', 'tipo', 'titulo', 'link', 'origem', 'copiado', 'obs', 'drive_id', 'hash', 'nome_original', 'autor', 'avaliacao_id', 'assuntos_extra', 'status'],
   Cartoes: ['id', 'criado', 'cadeira_id', 'assunto', 'frente', 'verso', 'fonte', 'origem', 'vence', 'estabilidade', 'dificuldade', 'revisoes', 'lapsos', 'ultima', 'imagem_frente', 'imagem_verso'],
   Revisoes: ['data', 'cartao_id', 'nota', 'intervalo'],
   Convites: ['email', 'convidado_em', 'papel', 'status', 'obs', 'nome', 'sigla'],
+  // Assuntos criados à mão e ligação com uma 2ª cadeira (atalho)
+  Assuntos: ['id', 'cadeira_id', 'assunto', 'cadeira_secundaria', 'criado', 'obs'],
 };
 export const ABAS = Object.keys(COLUNAS);
 
 /** Abas que NÃO recebem os dados de exemplo do JSON (começam vazias na planilha). */
-const ABAS_SEM_EXEMPLO = ['Estudos', 'Pendencias', 'Duvidas', 'Questoes', 'Notas', 'Materiais', 'Cartoes', 'Revisoes', 'Convites'];
+const ABAS_SEM_EXEMPLO = ['Estudos', 'Pendencias', 'Duvidas', 'Questoes', 'Notas', 'Materiais', 'Cartoes', 'Revisoes', 'Convites', 'Assuntos'];
 
 const API = 'https://sheets.googleapis.com/v4/spreadsheets';
 
@@ -241,6 +243,27 @@ export class SheetsAdapter {
       const c = cab.indexOf(coluna);
       if (c < 0) throw new Error(`A aba ${aba} não tem a coluna "${coluna}".`);
       return { range: `${aspas(aba)}!${letraColuna(c)}${linhaPlanilha}`, values: [objetoParaLinha([coluna], campos)] };
+    });
+    await this.req('/values:batchUpdate', { method: 'POST', body: { valueInputOption: 'RAW', data } });
+  }
+
+  /**
+   * Várias linhas de uma aba numa só leitura e numa só gravação
+   * (ex.: renomear um assunto em todas as aulas). mudancas: [{id, campos}]
+   */
+  async atualizarVarias(aba, mudancas) {
+    if (!mudancas.length) return;
+    const { values = [] } = await this.req(`/values/${encodeURIComponent(aspas(aba))}`);
+    const [cab = [], ...linhas] = values;
+    const colId = cab.indexOf('id');
+    const data = mudancas.flatMap(({ id, campos }) => {
+      const idx = linhas.findIndex((l) => String(l[colId] ?? '') === String(id));
+      if (colId < 0 || idx < 0) throw new Error(`Não encontrei "${id}" na aba ${aba}. Recarregue a página.`);
+      return Object.keys(campos).map((coluna) => {
+        const c = cab.indexOf(coluna);
+        if (c < 0) throw new Error(`A aba ${aba} não tem a coluna "${coluna}".`);
+        return { range: `${aspas(aba)}!${letraColuna(c)}${idx + 2}`, values: [objetoParaLinha([coluna], campos)] };
+      });
     });
     await this.req('/values:batchUpdate', { method: 'POST', body: { valueInputOption: 'RAW', data } });
   }

@@ -45,4 +45,8 @@ export class JsonAdapter {
     if (!linha) throw new Error(`Não encontrei "${id}" na aba ${aba}.`);
     Object.assign(linha, campos);
   }
+
+  async atualizarVarias(aba, mudancas) {
+    for (const { id, campos } of mudancas) await this.atualizarLinha(aba, id, campos);
+  }
 }

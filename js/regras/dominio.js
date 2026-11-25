@@ -16,6 +16,19 @@ export const NIVEIS = [
 const chave = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 export const mesmoAssunto = (a, b) => chave(a) === chave(b);
 
+/** O item é deste assunto (o principal)? */
+export const doAssunto = (x, cadeiraId, assunto) => x.cadeiraId === cadeiraId && mesmoAssunto(x.assunto, assunto);
+/** O item aparece aqui como atalho (ligado a mais de um assunto)? */
+export const atalhoDoAssunto = (x, cadeiraId, assunto) =>
+  !doAssunto(x, cadeiraId, assunto) && (x.assuntosExtra ?? []).some((r) => r.cadeiraId === cadeiraId && mesmoAssunto(r.assunto, assunto));
+/** Principal ou atalho. */
+export const ligadoAoAssunto = (x, cadeiraId, assunto) => doAssunto(x, cadeiraId, assunto) || atalhoDoAssunto(x, cadeiraId, assunto);
+
+/** Assuntos de outras cadeiras ligados a esta como cadeira secundária (aparecem como atalho). */
+export const assuntosSecundarios = (m, cadeiraId) => (m.assuntos ?? []).filter((a) => a.secundaria === cadeiraId);
+/** Registro manual do assunto (aba Assuntos), se houver. */
+export const registroAssunto = (m, cadeiraId, assunto) => (m.assuntos ?? []).find((a) => a.cadeiraId === cadeiraId && mesmoAssunto(a.assunto, assunto));
+
 /** Questão -> {acerto: boolean, aprofundar: boolean} */
 export function avaliarQuestao(q) {
   if (q.resultado === 'Acertou') return { acerto: true, aprofundar: q.motivos.some((m) => /aprofund/i.test(m)) || q.confianca <= 2 };
@@ -73,7 +86,7 @@ export function assuntosDaCadeira(m, cadeiraId) {
     if (a && !nomes.some((n) => mesmoAssunto(n, a))) nomes.push(a);
   };
   m.aulas.filter((a) => a.cadeiraId === cadeiraId).forEach((a) => add(a.assunto));
-  for (const lista of [m.questoes, m.duvidas, m.materiais, m.cartoes, m.estudos]) {
+  for (const lista of [m.assuntos ?? [], m.questoes, m.duvidas, m.materiais, m.cartoes, m.estudos]) {
     lista.filter((x) => x.cadeiraId === cadeiraId).forEach((x) => add(x.assunto));
   }
   return nomes;

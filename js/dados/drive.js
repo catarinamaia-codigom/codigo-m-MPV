@@ -188,3 +188,76 @@ export async function compartilhar(id, email, mensagem) {
   const url = `${API}/${id}/permissions?sendNotificationEmail=true&emailMessage=${encodeURIComponent(mensagem)}&fields=id`;
   return req(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'user', role: 'reader', emailAddress: email }) });
 }
+
+// ── Ver, baixar, excluir e renomear (etapa das ideias de 25/11) ─────────
+
+/** ID de um arquivo do Drive a partir do link (file/d/ID, open?id=ID, docs/d/ID). */
+export function idDoLink(link) {
+  const s = String(link ?? '');
+  return s.match(/(?:drive|docs)\.google\.com\/(?:file|document|presentation|spreadsheets|forms)\/d\/([\w-]{10,})/)?.[1]
+    ?? s.match(/drive\.google\.com\/(?:open|uc)\?(?:[^#]*&)?id=([\w-]{10,})/)?.[1] ?? '';
+}
+
+/** ID de vídeo do YouTube (watch?v=, youtu.be/, shorts/, embed/, live/). */
+export function idYoutube(link) {
+  return String(link ?? '').match(/(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/)?.[1] ?? '';
+}
+
+/**
+ * Como mostrar um material dentro do site: vídeo do YouTube, arquivo do
+ * Drive (vídeo, PDF, imagem, documento) ou nada (abre em outra aba).
+ * @returns {{tipo: 'youtube'|'drive'|'', url: string, driveId: string}}
+ */
+export function formaDeVer(material) {
+  const yt = idYoutube(material.link);
+  if (yt) return { tipo: 'youtube', url: `https://www.youtube-nocookie.com/embed/${yt}?rel=0&modestbranding=1`, driveId: '' };
+  const id = material.driveId || idDoLink(material.link);
+  if (!id) return { tipo: '', url: '', driveId: '' };
+  const doc = String(material.link ?? '').match(/docs\.google\.com\/(document|presentation|spreadsheets)\/d\//)?.[1];
+  return { tipo: 'drive', url: doc ? `https://docs.google.com/${doc}/d/${id}/preview` : `https://drive.google.com/file/d/${id}/preview`, driveId: id };
+}
+
+/**
+ * Baixa um arquivo do Drive direto para o computador, sem abrir a pasta.
+ * Arquivos grandes (gravações) vão pelo link de download do Google.
+ */
+export async function baixar(id, nomeSugerido = '') {
+  const meta = await req(`${API}/${id}?fields=name,size,mimeType`);
+  if (/^application\/vnd\.google-apps/.test(meta.mimeType) || Number(meta.size) > 150 * 1024 * 1024) {
+    window.open(`https://drive.google.com/uc?export=download&id=${id}`, '_blank', 'noopener');
+    return;
+  }
+  const resp = await req(`${API}/${id}?alt=media`, { bruto: true });
+  const url = URL.createObjectURL(await resp.blob());
+  const a = Object.assign(document.createElement('a'), { href: url, download: meta.name || nomeSugerido || 'arquivo' });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+/** Manda para a lixeira do Drive (dá para recuperar por 30 dias no próprio Drive). */
+export async function paraLixeira(id) {
+  return req(`${API}/${id}?fields=id,trashed`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true }) });
+}
+
+/** Procura uma pasta pelo nome dentro da pasta-mãe, sem criar. */
+export async function acharPasta(nome, paiId) {
+  const q = `name = '${aspas(nome)}' and '${paiId}' in parents and mimeType = '${PASTA}' and trashed = false`;
+  const { files = [] } = await req(`${API}?q=${encodeURIComponent(q)}&fields=files(id)&pageSize=1`);
+  return files[0]?.id ?? '';
+}
+
+/** Renomeia um arquivo ou pasta (e opcionalmente troca de pasta-mãe). */
+export async function renomear(id, novoNome, { novoPaiId = '' } = {}) {
+  let mover = '';
+  if (novoPaiId) {
+    const atual = await req(`${API}/${id}?fields=parents`);
+    mover = `&addParents=${novoPaiId}&removeParents=${(atual.parents ?? []).join(',')}`;
+  }
+  for (const k of [...cachePastas.keys()]) if (cachePastas.get(k) === id) cachePastas.delete(k);
+  return req(`${API}/${id}?fields=id,name${mover}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: novoNome }) });
+}
+
+/** Nome atual de um arquivo. */
+export const nomeDoArquivo = async (id) => (await req(`${API}/${id}?fields=name`)).name;

@@ -12,6 +12,29 @@ const num = (v, padrao = 0) => {
   return Number.isFinite(n) ? n : padrao;
 };
 
+/** Junta à lista da Config as opções-padrão que ainda não estão nela (sem repetir). */
+const comPadroes = (lista, padroes) => {
+  const chave = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const saida = [...lista];
+  for (const p of padroes) if (!saida.some((x) => chave(x) === chave(p))) saida.push(p);
+  return saida;
+};
+
+/**
+ * Ligações extras com outros assuntos ("atalhos"), gravadas como
+ * "cadeira_id::assunto; cadeira_id::assunto". Ex.: material de Coração que
+ * também aparece em Músculos do tórax.
+ */
+export function lerAtalhos(texto) {
+  return lista(texto)
+    .map((item) => {
+      const [cadeiraId, ...resto] = item.split('::');
+      return { cadeiraId: txt(cadeiraId), assunto: txt(resto.join('::')) };
+    })
+    .filter((r) => r.cadeiraId && r.assunto);
+}
+export const gravarAtalhos = (refs) => refs.map((r) => `${r.cadeiraId}::${r.assunto}`).join('; ');
+
 /** Turmas que sempre aparecem (aulas para a turma inteira). */
 const TURMAS_GERAIS = ['', 'todas', 'geral', 'todos'];
 
@@ -49,9 +72,19 @@ export function lerConfig(linhas = []) {
     tiposMaterial: (() => {
       const tipos = (grupos.tipo_material ?? []).map((i) => ({ nome: i.chave, icone: i.valor || 'arquivo' }));
       if (!tipos.some((t) => t.icone === 'infografico')) tipos.splice(Math.min(2, tipos.length), 0, { nome: 'Infográfico', icone: 'infografico' });
+      // Tipos que o Código M sempre oferece (dá para renomear/acrescentar outros na Config)
+      const padrao = [
+        ['Gravação de aula', 'gravacao'], ['Goodnotes | Pessoal', 'goodnotes'], ['Goodnotes | Colaborativo', 'goodnotes'],
+        ['Link de site', 'link'], ['Trabalho da disciplina', 'trabalho'], ['Trabalho extra', 'trabalho'],
+      ];
+      for (const [nome, icone] of padrao) if (!tipos.some((t) => t.nome.toLowerCase() === nome.toLowerCase())) tipos.push({ nome, icone });
       return tipos;
     })(),
-    motivosDuvida: (grupos.motivo_duvida ?? []).map((i) => i.chave),
+    motivosDuvida: comPadroes((grupos.motivo_duvida ?? []).map((i) => i.chave).filter(Boolean), ['Errei questão', 'Não conhecia', 'Curiosidade']),
+    tiposAtividade: comPadroes((grupos.tipo_atividade ?? []).map((i) => i.chave).filter(Boolean), [
+      'Estudo', 'Escrevendo trabalho', 'Atividade extra', 'Atividade estratégica', 'Atividade de foco residência',
+    ]),
+    perguntasAtivas: (grupos.pergunta_ativa ?? []).map((i) => i.valor || i.chave).filter(Boolean),
     tiposAvaliacao: (grupos.tipo_avaliacao ?? []).map((i) => i.chave).filter(Boolean).length
       ? grupos.tipo_avaliacao.map((i) => i.chave).filter(Boolean)
       : ['Prova teórica', 'Prova prática', 'Trabalho oral', 'Seminário', 'Prova integrada', 'Trabalho', 'Outro'],
@@ -79,6 +112,12 @@ export function turmaVisivel(turma, turmasVisiveis) {
   return t.split(/[\/,;]/).map((x) => x.trim()).some((x) => turmasVisiveis.includes(x));
 }
 
+/** Horário embutido nos ids criados pelo site ("D-lq3k9x" -> número); 0 se não tiver. */
+const ordemId = (id) => {
+  const n = parseInt(String(id).split('-').pop(), 36);
+  return Number.isFinite(n) ? n : 0;
+};
+
 const porDataHora = (a, b) =>
   (a.data + (a.inicio || a.hora || '')).localeCompare(b.data + (b.inicio || b.hora || ''));
 
@@ -87,7 +126,7 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
   const config = lerConfig(abas.Config);
 
   const modulos = (abas.Modulos ?? [])
-    .map((m) => ({ id: txt(m.id), periodo: txt(m.periodo), nome: txt(m.nome), ordem: num(m.ordem, 99) }))
+    .map((m) => ({ id: txt(m.id), periodo: txt(m.periodo), nome: txt(m.nome), ordem: num(m.ordem, 99), tipo: txt(m.tipo) }))
     .filter((m) => m.id)
     .sort((a, b) => a.ordem - b.ordem);
 
@@ -145,6 +184,9 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
       assunto: txt(e.assunto),
       atividade: txt(e.atividade),
       feito: bool(e.feito),
+      tipo: txt(e.tipo) || 'Estudo',
+      obs: txt(e.obs),
+      avaliacaoId: txt(e.avaliacao_id),
     }))
     .filter((e) => e.id && e.atividade)
     .sort((a, b) => (a.data ? 0 : 1) - (b.data ? 0 : 1) || porDataHora(a, b));
@@ -179,9 +221,12 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
       sanada: ['sanada', 'resolvida', 'ok', 'feita'].includes(txt(d.status).toLowerCase()),
       sanadaEm: normalizarData(d.sanada_em),
       imagem: txt(d.imagem),
+      materialId: txt(d.material_id),
+      assuntosExtra: lerAtalhos(d.assuntos_extra),
     }))
     .filter((d) => d.id && d.pergunta)
-    .sort((a, b) => b.criada.localeCompare(a.criada));
+    // Mais novas em cima: pela data e, no mesmo dia, pela ordem em que foram escritas (o id carrega o horário)
+    .sort((a, b) => b.criada.localeCompare(a.criada) || ordemId(b.id) - ordemId(a.id));
 
   const questoes = (abas.Questoes ?? [])
     .map((q) => ({
@@ -238,6 +283,9 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
         hash: txt(x.hash),
         nomeOriginal: txt(x.nome_original),
         autor: txt(x.autor),
+        avaliacaoId: txt(x.avaliacao_id),
+        assuntosExtra: lerAtalhos(x.assuntos_extra),
+        status: txt(x.status), // '' | 'A excluir' | 'Excluído'
       };
     })
     .filter((x) => x.id && (x.titulo || x.link))
@@ -273,6 +321,10 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
     .map((c) => ({ email: txt(c.email).toLowerCase(), nome: txt(c.nome), sigla: txt(c.sigla), convidadoEm: normalizarData(c.convidado_em), papel: txt(c.papel).toLowerCase() || 'leitura', status: txt(c.status), obs: txt(c.obs) }))
     .filter((c) => c.email);
 
+  const assuntos = (abas.Assuntos ?? [])
+    .map((a) => ({ id: txt(a.id), cadeiraId: txt(a.cadeira_id), assunto: txt(a.assunto), secundaria: txt(a.cadeira_secundaria), criado: normalizarData(a.criado), obs: txt(a.obs) }))
+    .filter((a) => a.id && a.cadeiraId && a.assunto);
+
   const visivel = (x) => turmaVisivel(x.turma, config.turmasVisiveis);
 
   return {
@@ -290,9 +342,11 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
     duvidas,
     questoes,
     notas,
-    materiais,
+    materiais: materiais.filter((x) => !/^(a excluir|exclu[ií]do)$/i.test(x.status)), // ativos
+    materiaisAExcluir: materiais.filter((x) => /^a excluir$/i.test(x.status)), // esperando confirmação em Pendências
     cartoes,
     revisoes,
     convites,
+    assuntos,
   };
 }

@@ -10,6 +10,20 @@ export function esc(valor) {
     .replace(/'/g, '&#39;');
 }
 
+/**
+ * Texto -> HTML seguro com os endereços (https://…, www.…) virando links
+ * clicáveis que abrem em outra aba. Quebras de linha são mantidas pelo CSS.
+ */
+export function linkificar(texto) {
+  return esc(texto).replace(/(https?:\/\/[^\s<]+|www\.[^\s<]+)/g, (url) => {
+    const limpo = url.replace(/[.,;:!?)]+$/, '');
+    const resto = url.slice(limpo.length);
+    const href = limpo.startsWith('www.') ? `https://${limpo}` : limpo;
+    const curto = limpo.replace(/^https?:\/\/(www\.)?/, '').slice(0, 48) + (limpo.length > 60 ? '…' : '');
+    return `<a href="${href}" target="_blank" rel="noopener">${curto}</a>${resto}`;
+  });
+}
+
 /** "Bioquímica" -> "Bioquimica" */
 export function semAcentos(texto) {
   return String(texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '');

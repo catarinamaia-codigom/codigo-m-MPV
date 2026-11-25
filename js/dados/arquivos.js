@@ -3,7 +3,8 @@
 
 import { emSimulacao } from './dataSource.js';
 import * as google from './google.js';
-import { destino, textoDestino, garantirCaminho, enviar, hashArquivo, mover } from './drive.js';
+import { destino, textoDestino, garantirCaminho, garantirPasta, enviar, hashArquivo, mover, acharPasta, renomear, nomeDoArquivo, bloco } from './drive.js';
+import { GOOGLE } from '../config.js';
 import { cadeiraPorId, moduloPorId, periodoCadeira } from './consultas.js';
 import { nomeArquivo } from '../util/texto.js';
 
@@ -96,4 +97,57 @@ export async function enviarPelaCaixa(m, arquivo, { cadeiraId, assunto = '', tip
   const r = await resp.json().catch(() => ({ ok: false, erro: 'A caixa de envio não respondeu.' }));
   if (!r.ok) throw new Error(r.erro || 'Não enviou.');
   return r;
+}
+
+/**
+ * Acompanha no Drive a troca de nome (ou de cadeira) de um assunto:
+ * renomeia/move a pasta Conhecimento/[Cadeira]/[Assunto] e troca os blocos
+ * [Cadeira] e [Assunto] no nome dos arquivos. Se a pasta de destino já
+ * existir, move os arquivos um a um para lá.
+ * @param itens [{id, categoria, origem}] arquivos do assunto (materiais e prints)
+ * @returns {Promise<string>} resumo do que foi feito
+ */
+export async function renomearAssuntoNoDrive(m, { de, para, itens }) {
+  if (emSimulacao()) return 'simulação: nada foi mudado no Drive';
+  if (!google.temDrive()) return 'sem permissão do Drive: pastas e arquivos ficaram como estavam';
+  const raiz = GOOGLE.pastas.conhecimento;
+  const [cadAntiga, assAntigo] = destinoDe(m, { cadeiraId: de.cadeiraId, assunto: de.assunto }).pastas;
+  const [cadNova, assNovo] = destinoDe(m, { cadeiraId: para.cadeiraId, assunto: para.assunto }).pastas;
+  let pastas = 0;
+  let movidos = 0;
+  let renomeados = 0;
+
+  const idCadAntiga = await acharPasta(cadAntiga, raiz);
+  const pastaAntiga = idCadAntiga ? await acharPasta(assAntigo, idCadAntiga) : '';
+  if (pastaAntiga) {
+    const idCadNova = cadNova === cadAntiga ? idCadAntiga : await garantirPasta(cadNova, raiz);
+    const jaExiste = await acharPasta(assNovo, idCadNova);
+    if (!jaExiste) {
+      await renomear(pastaAntiga, assNovo, { novoPaiId: idCadNova !== idCadAntiga ? idCadNova : '' });
+      pastas++;
+    } else {
+      for (const it of itens) {
+        await reclassificar(m, it.id, { cadeiraId: para.cadeiraId, assunto: para.assunto, categoria: it.categoria, origem: it.origem });
+        movidos++;
+      }
+    }
+  } else {
+    // Sem pasta antiga (arquivos soltos): leva cada um para o lugar novo
+    for (const it of itens) {
+      await reclassificar(m, it.id, { cadeiraId: para.cadeiraId, assunto: para.assunto, categoria: it.categoria, origem: it.origem });
+      movidos++;
+    }
+  }
+
+  // Nomes dos arquivos: troca os blocos [Cadeira] e [Assunto]
+  const trocas = [[bloco(de.assunto), bloco(para.assunto)], [bloco(nomeBase(m, de.cadeiraId)), bloco(nomeBase(m, para.cadeiraId))]].filter(([a, b]) => a !== b);
+  for (const it of itens) {
+    const nome = await nomeDoArquivo(it.id);
+    const novo = trocas.reduce((n, [a, b]) => n.split(a).join(b), nome);
+    if (novo !== nome) {
+      await renomear(it.id, novo);
+      renomeados++;
+    }
+  }
+  return [pastas && 'pasta renomeada', movidos && `${movidos} arquivo(s) movido(s)`, renomeados && `${renomeados} arquivo(s) renomeado(s)`].filter(Boolean).join(', ') || 'nada a mudar no Drive';
 }
