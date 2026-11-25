@@ -1207,3 +1207,123 @@ body.na-capa .ideias { display: none; }
 .convite-nome { min-width: 160px !important; flex: 0.6 !important; }
 .convite-sigla { width: 90px; min-width: 0 !important; flex: 0 0 90px !important; }
 body[data-papel="leitura"] .registrar { display: none; }
+
+/* ── Ideias de 25/11: materiais, dúvidas, avaliações, visualizador ── */
+
+/* Celular: cadeira e assunto em uma coluna só (antes ficavam duas colunas espremidas) */
+@media (max-width: 860px) {
+  .grade-cadeira { grid-template-columns: 1fr; }
+  .cabecalho-linha .acoes-topo { width: 100%; flex-wrap: wrap; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .material { flex-wrap: wrap; }
+  .material-botoes { width: 100%; justify-content: flex-end; }
+  .atalhos-goodnotes .btn { flex: 1 1 auto; justify-content: center; }
+}
+
+/* Tags novas */
+.tag-atalho { background: rgba(43, 45, 51, 0.07); color: var(--grafite); }
+.tag-av { background: rgba(200, 16, 46, 0.07); color: var(--vermelho-escuro); }
+.tag-motivo { background: rgba(43, 45, 51, 0.06); color: var(--texto-2); }
+.tag-atividade { background: rgba(43, 45, 51, 0.08); color: var(--grafite); margin-left: 4px; }
+.tag-material { border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; text-decoration: none; background: rgba(43, 45, 51, 0.07); color: var(--grafite); }
+.tag .ic-mini, .tag-material .ic-mini { width: 12px; height: 12px; }
+
+/* Materiais: botões à direita, observação com links */
+.material-botoes { display: flex; gap: 4px; flex-wrap: wrap; }
+.material-obs, .estudo-obs, .assunto-obs { margin: 3px 0 0; font-size: 13px; color: var(--texto-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+.material-obs a, .estudo-obs a, .assunto-obs a, .duvida-lados a, .av-bloco a, .pa-resposta a { text-decoration: underline; }
+.material-atalho { opacity: 0.92; }
+.material-atalho .material-icone { outline: 1px dashed rgba(43, 45, 51, 0.3); }
+.btn-mini-perigo:hover, .btn-perigo:hover { background: var(--vermelho) !important; border-color: var(--vermelho) !important; color: #fff !important; }
+.btn-perigo { color: var(--vermelho-escuro); }
+
+/* Goodnotes: atalhos no topo do assunto */
+.atalhos-goodnotes { display: flex; gap: 8px; flex-wrap: wrap; margin: -6px 0 12px; }
+.btn-goodnotes { font-size: 13px; padding: 5px 12px; }
+.btn-goodnotes.vazio-gn { color: var(--texto-3); border-style: dashed; }
+
+/* Dúvidas: resposta recolhida, quadrado verde para colar */
+.duvida-resposta { margin: 6px 0 0 28px; }
+.duvida-resposta > summary { list-style: none; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12.5px; color: var(--texto-2); min-height: 26px; }
+.duvida-resposta > summary::-webkit-details-marker { display: none; }
+.dr-rotulo { display: inline-flex; align-items: center; gap: 3px; font-weight: 600; white-space: nowrap; }
+.dr-rotulo .seta-recolher { transition: transform 0.15s; }
+.duvida-resposta[open] .dr-rotulo .seta-recolher { transform: rotate(90deg); }
+.dr-previa { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--texto-3); }
+.duvida-resposta[open] .dr-previa { visibility: hidden; }
+.colar-verde {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600;
+  border: 1px solid rgba(47, 125, 79, 0.35); background: rgba(232, 244, 236, 0.85); color: var(--verde); cursor: pointer; white-space: nowrap;
+}
+.colar-verde:hover { background: var(--verde); color: #fff; }
+.duvida-resposta .duvida-lados { margin: 6px 0 0; }
+.lado-verde { cursor: copy; transition: box-shadow 0.15s; }
+.lado-verde:hover, .lado-verde:focus-visible { box-shadow: inset 0 0 0 2px rgba(47, 125, 79, 0.45); outline: none; }
+.lado-verde .rotulo-lado { display: inline-flex; align-items: center; gap: 4px; }
+.filtro-motivo { margin: 0 0 8px; }
+.filtro-motivo .chips { flex-wrap: wrap; }
+
+/* Aulas do assunto: trocar o assunto de uma aula */
+.btn-aula-assunto { padding: 1px 5px; margin-left: 4px; vertical-align: middle; opacity: 0.6; }
+.btn-aula-assunto:hover { opacity: 1; }
+
+/* Cadeira: atalhos de outras cadeiras e zonas */
+.assuntos-atalho-titulo { display: block; margin: 12px 0 4px; }
+.periodo-zonas .periodo-sigla { display: inline-grid; place-items: center; }
+.modulo-titulo .btn-mais { margin-left: 8px; }
+
+/* Painel da avaliação */
+.modal.modal-largo { width: min(760px, 100%); }
+.av-painel .av-tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.av-bloco { background: rgba(255, 255, 255, 0.55); border-radius: 10px; padding: 8px 10px; margin: 8px 0; font-size: 13.5px; }
+.av-bloco p { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.av-secao { margin-top: 14px; }
+.av-secao header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.av-secao h3 { font-size: 14px; display: flex; align-items: center; gap: 6px; margin: 0; }
+.av-secao h3 small { color: var(--texto-3); font-weight: 500; }
+
+/* Pergunta de estudo ativo (Materiais) */
+.pergunta-ativa { margin-bottom: 14px; }
+.pa-texto { font-size: 17px; font-weight: 600; margin: 0 0 6px; color: var(--grafite); line-height: 1.35; }
+.pa-resposta { background: rgba(232, 244, 236, 0.75); border-radius: 10px; padding: 8px 10px; white-space: pre-wrap; font-size: 14px; }
+
+/* Visualizador lateral (vídeo, gravação, PDF) */
+.visualizador {
+  position: fixed; top: 12px; right: 12px; bottom: 12px; width: min(560px, 42vw); z-index: 40;
+  display: flex; flex-direction: column; gap: 8px; padding: 10px;
+  background: rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: blur(30px) saturate(170%); backdrop-filter: blur(30px) saturate(170%);
+  border: 1px solid var(--vidro-borda); border-top: 4px solid var(--vermelho); border-radius: 20px; box-shadow: var(--sombra-pop);
+}
+.visualizador.largo { width: min(900px, 62vw); }
+.vis-topo { display: flex; align-items: center; gap: 6px; }
+.vis-titulo { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.vis-titulo strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.vis-topo .btn-icone { border: 0; background: none; box-shadow: none; }
+.vis-quadro { flex: 1; min-height: 0; border-radius: 12px; overflow: hidden; background: #111; }
+.vis-youtube .vis-quadro { flex: 0 0 auto; aspect-ratio: 16 / 9; }
+.vis-quadro iframe { width: 100%; height: 100%; border: 0; display: block; }
+.vis-acoes { display: flex; gap: 6px; flex-wrap: wrap; }
+.vis-acoes .btn { font-size: 13px; padding: 5px 10px; }
+.vis-nota { margin: 0; font-size: 11.5px; }
+body.com-visualizador .principal { margin-right: calc(min(560px, 42vw) + 12px); }
+body.com-visualizador:has(.visualizador.largo) .principal { margin-right: calc(min(900px, 62vw) + 12px); }
+body.com-visualizador .ideias { right: calc(min(560px, 42vw) + 28px); }
+@media (max-width: 860px) {
+  .visualizador, .visualizador.largo { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; height: 52vh; height: 52dvh; }
+  .vis-youtube { height: auto; }
+  body.com-visualizador .principal { margin-right: 0; padding-bottom: 54vh; }
+  body.com-visualizador .ideias { right: 16px; bottom: calc(52vh + 16px); }
+}
+/* Vídeo: o painel tem só a altura do vídeo; com o painel aberto, a página fica em
+   uma coluna com Dúvidas/Questões/Cartões em cima (para anotar enquanto assiste) */
+@media (min-width: 861px) {
+  .visualizador.vis-youtube { bottom: auto; }
+}
+@media (max-width: 1700px) {
+  body.com-visualizador .grade-cadeira { grid-template-columns: minmax(0, 1fr); }
+  body.com-visualizador .grade-cadeira > .coluna:last-child { order: -1; }
+}
+/* A prévia da resposta (numa linha) não pode alargar o cartão da dúvida */
+.lista-duvidas > .duvida, .duvida-topo, .duvida-texto, .duvida-resposta, .duvida-resposta > summary { min-width: 0; }
+.duvida-resposta { overflow: hidden; }
+.duvida-lados > div { min-width: 0; overflow-wrap: anywhere; }

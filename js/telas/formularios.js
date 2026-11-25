@@ -5,7 +5,9 @@
 import { abrirFormulario } from '../ui/formulario.js';
 import { aviso } from '../ui/componentes.js';
 import { adicionar, atualizar, emSimulacao, novoId } from '../dados/dataSource.js';
-import { assuntosDaCadeira } from '../regras/dominio.js';
+import { assuntosDaCadeira, mesmoAssunto } from '../regras/dominio.js';
+import { gravarAtalhos } from '../dados/normalizar.js';
+import { formatoCurto } from '../util/datas.js';
 import { guardarArquivo, previaDestino, reclassificar, papelAtual, enviarPelaCaixa } from '../dados/arquivos.js';
 import { avisarMudanca } from '../dados/dataSource.js';
 import { nomeCadeira } from '../dados/consultas.js';
@@ -33,6 +35,34 @@ const campoAssunto = (m, valor, obrigatorio = false) => ({
   nome: 'assunto', rotulo: 'Assunto', valor, largo: true, obrigatorio, dependeDe: 'cadeira_id',
   sugestoes: (cad) => (cad ? assuntosDaCadeira(m, cad) : []), dica: 'Comece a digitar: aparecem os assuntos das aulas.',
 });
+/** Avaliações para ligar um item (da cadeira escolhida; sem cadeira = todas). */
+const campoAvaliacao = (m, cadeiraId, valor = '', rotulo = 'Avaliação ligada') => {
+  const avs = m.avaliacoes.filter((a) => !cadeiraId || a.cadeiraId === cadeiraId);
+  return {
+    nome: 'avaliacao_id', rotulo, tipo: 'select', valor, largo: true,
+    opcoes: [{ valor: '', texto: '— nenhuma —' }, ...avs.map((a) => ({ valor: a.id, texto: `${formatoCurto(a.data)} · ${a.titulo}${cadeiraId ? '' : ` (${nomeCadeira(m, a.cadeiraId)})`}` }))],
+  };
+};
+/**
+ * "Também aparece em": outros assuntos da mesma cadeira onde o item vira atalho.
+ * Só entra no formulário quando a cadeira já é conhecida.
+ */
+const campoAtalhos = (m, cadeiraId, assunto, refs = []) => {
+  if (!cadeiraId) return [];
+  const opcoes = assuntosDaCadeira(m, cadeiraId).filter((a) => !mesmoAssunto(a, assunto)).map((a) => ({ valor: `${cadeiraId}::${a}`, texto: a }));
+  if (!opcoes.length) return [];
+  return [{ nome: 'assuntos_extra', rotulo: 'Também aparece em (atalho)', tipo: 'checks', opcoes, largo: true, valor: gravarAtalhos(refs),
+    dica: 'Marque outras aulas/assuntos onde este item deve aparecer.' }];
+};
+/** Material para ligar a uma dúvida (do mesmo assunto primeiro). */
+const campoMaterial = (m, cadeiraId, assunto, valor = '') => {
+  const daCadeira = m.materiais.filter((x) => !cadeiraId || x.cadeiraId === cadeiraId);
+  const ordenados = [...daCadeira.filter((x) => mesmoAssunto(x.assunto, assunto)), ...daCadeira.filter((x) => !mesmoAssunto(x.assunto, assunto))];
+  if (!ordenados.length) return [];
+  return [{ nome: 'material_id', rotulo: 'Material ligado', tipo: 'select', valor, largo: true,
+    opcoes: [{ valor: '', texto: '— nenhum —' }, ...ordenados.slice(0, 80).map((x) => ({ valor: x.id, texto: `${x.titulo} (${x.tipo}${x.assunto && !mesmoAssunto(x.assunto, assunto) ? ` · ${x.assunto}` : ''})` }))] }];
+};
+
 const campoImagem = (nome, rotulo, atual = '') => ({ nome, rotulo, tipo: 'arquivo', aceita: 'image/*', imagem: true, largo: true, atual: atual ? 'imagem guardada' : '' });
 
 // ── Estudos ─────────────────────────────────────────────
@@ -42,8 +72,8 @@ export async function marcarEstudo(m, id, feito) {
   await atualizar('Estudos', id, feito ? { feito: true, data: m.hoje } : { feito: false });
 }
 
-export function novoEstudo(m, { data = '', cadeiraId = '', assunto = '', atividade = '' } = {}) {
-  formularioEstudo(m, { data, cadeiraId, assunto, atividade, feito: false });
+export function novoEstudo(m, { data = '', cadeiraId = '', assunto = '', atividade = '', tipo = 'Estudo', avaliacaoId = '' } = {}) {
+  formularioEstudo(m, { data, cadeiraId, assunto, atividade, feito: false, tipo, avaliacaoId });
 }
 
 export function editarEstudo(m, e) {
@@ -53,8 +83,9 @@ export function editarEstudo(m, e) {
 function formularioEstudo(m, e) {
   const editar = Boolean(e.id);
   abrirFormulario({
-    titulo: editar ? 'Estudo' : 'Marcar estudo',
+    titulo: editar ? (e.tipo && e.tipo !== 'Estudo' ? e.tipo : 'Estudo') : e.tipo && e.tipo !== 'Estudo' ? 'Nova atividade' : 'Marcar estudo',
     campos: [
+      { nome: 'tipo', rotulo: 'Tipo de atividade', tipo: 'radios', opcoes: ops(m.config.tiposAtividade), valor: e.tipo || 'Estudo', largo: true },
       { nome: 'atividade', rotulo: 'O que vou fazer', obrigatorio: true, largo: true, valor: e.atividade,
         sugestoes: ['Assistir à aula / ver material', 'Resumo ativo', 'Infográfico', 'Conversar com tutor (IA)', 'Elaborar dúvidas', 'Criar flashcards', 'Resolver questões', 'Estudar como cai na prova', 'Revisão'] },
       campoCadeira(m, e.cadeiraId ?? '', { vazio: true, textoVazio: 'Pessoal / sem cadeira' }),
@@ -63,6 +94,8 @@ function formularioEstudo(m, e) {
       { nome: 'inicio', rotulo: 'Início', tipo: 'time', valor: e.inicio ?? '' },
       { nome: 'fim', rotulo: 'Fim', tipo: 'time', valor: e.fim ?? '' },
       { nome: 'feito', rotulo: 'Situação', tipo: 'check', textoCheck: 'Já fiz', valor: Boolean(e.feito) },
+      campoAvaliacao(m, e.cadeiraId, e.avaliacaoId ?? '', 'Ligada a uma avaliação (trabalho, seminário…)'),
+      { nome: 'obs', rotulo: 'Observação', tipo: 'textarea', valor: e.obs ?? '', largo: true, dica: 'Links colados aqui ficam clicáveis.' },
     ],
     aoSalvar: async (v) => {
       const linha = { ...v, feito: v.feito };
@@ -111,18 +144,25 @@ export function editarAvaliacao(m, a) {
       { nome: 'vale', rotulo: 'Quanto vale', tipo: 'number', valor: a.vale ?? '', min: 0, dica: 'Pontos máximos (ex.: 4)' },
       { nome: 'nota', rotulo: 'Quanto tirei', tipo: 'number', valor: a.nota ?? '', min: 0, dica: 'Em branco = ainda não saiu' },
       { nome: 'entrega', rotulo: 'Entrega no Classroom', tipo: 'radios', opcoes: ops(SITUACOES_ENTREGA), valor: a.entrega || 'Pendente', largo: true },
-      { nome: 'link', rotulo: 'Link do meu material', tipo: 'url', valor: a.link, largo: true, placeholder: 'https://…' },
+      { nome: 'link', rotulo: 'Anexar material: link', tipo: 'url', largo: true, placeholder: 'https://…', dica: 'Vira um material desta avaliação (aparece também no material da cadeira).' },
       { nome: 'arquivo', rotulo: 'Ou envie o arquivo', tipo: 'arquivo', largo: true },
-      { nome: 'obs', rotulo: 'Observação', tipo: 'textarea', valor: a.obs, largo: true },
+      { nome: 'assunto_material', rotulo: 'Ligar o material a uma aula/assunto', largo: true, sugestoes: assuntosDaCadeira(m, a.cadeiraId), dica: 'Opcional: aparece também na página desse assunto.' },
+      { nome: 'obs', rotulo: 'Observação', tipo: 'textarea', valor: a.obs, largo: true, dica: 'Links colados aqui ficam clicáveis.' },
       { nome: 'local', rotulo: 'Local', valor: a.local },
       { nome: 'titulo', rotulo: 'Título', valor: a.titulo, obrigatorio: true },
     ],
     previa: (v) => (v.arquivo ? previaDestino(m, { cadeiraId: a.cadeiraId, categoria: 'avaliacao' }) : ''),
     aoSalvar: async (v, progresso) => {
-      const { arquivo, ...campos } = v;
-      if (arquivo) {
-        const r = await guardarArquivo(m, arquivo, { cadeiraId: a.cadeiraId, assunto: v.titulo, categoria: 'avaliacao', tipo: 'Avaliacao', data: v.data, progresso });
-        campos.link = r.link || campos.link;
+      const { arquivo, link, assunto_material: assuntoMaterial, ...campos } = v;
+      if (arquivo || link) {
+        const r = arquivo && (await guardarArquivo(m, arquivo, {
+          cadeiraId: a.cadeiraId, assunto: assuntoMaterial || v.titulo, categoria: assuntoMaterial ? 'material' : 'avaliacao', tipo: 'Avaliacao', data: v.data, progresso,
+        }));
+        await adicionar('Materiais', {
+          id: novoId('M'), criado: m.hoje, cadeira_id: a.cadeiraId, assunto: assuntoMaterial, tipo: 'Trabalho da disciplina', origem: 'Minha',
+          titulo: arquivo ? arquivo.name.replace(/\.[^.]+$/, '') : `Material: ${v.titulo}`, link: r?.link || link, avaliacao_id: a.id,
+          drive_id: r && !r.simulado ? r.id : '', hash: r?.hash ?? '', nome_original: arquivo?.name ?? '',
+        }, { silencioso: true });
       }
       await atualizar('Avaliacoes', a.id, { ...campos, vale: numero(campos.vale), nota: numero(campos.nota) });
       salvo('Avaliação');
@@ -148,7 +188,7 @@ export function novaPendencia(m, { cadeiraId = '' } = {}) {
 
 // ── Dúvidas ─────────────────────────────────────────────
 
-export function novaDuvida(m, { cadeiraId = '', assunto = '' } = {}) {
+export function novaDuvida(m, { cadeiraId = '', assunto = '', materialId = '' } = {}) {
   abrirFormulario({
     titulo: 'Nova dúvida',
     intro: 'Escreva a pergunta agora. A tentativa de resposta e a resposta conferida podem ficar para depois.',
@@ -156,9 +196,11 @@ export function novaDuvida(m, { cadeiraId = '', assunto = '' } = {}) {
       { nome: 'pergunta', rotulo: 'Pergunta', tipo: 'textarea', obrigatorio: true, largo: true },
       campoCadeira(m, cadeiraId, { vazio: true, textoVazio: '— escolha —' }),
       campoAssunto(m, assunto),
-      { nome: 'motivo', rotulo: 'Motivo', tipo: 'select', opcoes: [{ valor: '', texto: '—' }, ...ops(m.config.motivosDuvida)] },
+      { nome: 'motivo', rotulo: 'Motivo', tipo: 'radios', opcoes: ops(m.config.motivosDuvida), largo: true },
       { nome: 'tentativa', rotulo: 'Minha tentativa (sem consultar)', tipo: 'textarea', largo: true },
       campoImagem('imagem', 'Imagem (print, slide, esquema)'),
+      ...campoMaterial(m, cadeiraId, assunto, materialId),
+      ...campoAtalhos(m, cadeiraId, assunto),
     ],
     previa: (v) => (v.imagem ? previaDestino(m, { cadeiraId: v.cadeira_id, assunto: v.assunto, categoria: 'duvida' }) : ''),
     aoSalvar: async (v, progresso) => {
@@ -170,16 +212,19 @@ export function novaDuvida(m, { cadeiraId = '', assunto = '' } = {}) {
   });
 }
 
-export function responderDuvida(m, d) {
+export function responderDuvida(m, d, { resposta = d.resposta } = {}) {
   abrirFormulario({
     titulo: 'Dúvida',
     campos: [
       { nome: 'pergunta', rotulo: 'Pergunta', tipo: 'textarea', valor: d.pergunta, largo: true, obrigatorio: true },
       { nome: 'tentativa', rotulo: 'Minha tentativa (sem consultar)', tipo: 'textarea', valor: d.tentativa, largo: true },
-      { nome: 'resposta', rotulo: 'Resposta conferida', tipo: 'textarea', valor: d.resposta, largo: true, linhas: 5 },
+      { nome: 'resposta', rotulo: 'Resposta conferida', tipo: 'textarea', valor: resposta, largo: true, linhas: 5 },
       { nome: 'fonte', rotulo: 'Fonte (livro, página, artigo)', valor: d.fonte, largo: true },
       { nome: 'link', rotulo: 'Link (IA, vídeo, artigo)', tipo: 'url', valor: d.link, largo: true },
       campoImagem('imagem', 'Imagem', d.imagem),
+      { nome: 'motivo', rotulo: 'Motivo', tipo: 'radios', opcoes: ops(m.config.motivosDuvida), valor: d.motivo, largo: true },
+      ...campoMaterial(m, d.cadeiraId, d.assunto, d.materialId),
+      ...campoAtalhos(m, d.cadeiraId, d.assunto, d.assuntosExtra),
       { nome: 'status', rotulo: 'Situação', tipo: 'radios', opcoes: ops(['Aberta', 'Sanada']), valor: d.sanada ? 'Sanada' : 'Aberta' },
     ],
     previa: (v) => (v.imagem ? previaDestino(m, { cadeiraId: d.cadeiraId, assunto: d.assunto, categoria: 'duvida' }) : ''),
@@ -223,8 +268,8 @@ export function novaQuestao(m, { cadeiraId = '', assunto = '', fonte = '' } = {}
 
 // ── Materiais ───────────────────────────────────────────
 
-export function novoMaterial(m, { cadeiraId = '', assunto = '', tipo = '' } = {}) {
-  formularioMaterial(m, { cadeiraId, assunto, tipo: tipo || m.config.tiposMaterial[0]?.nome, origem: 'Minha' });
+export function novoMaterial(m, { cadeiraId = '', assunto = '', tipo = '', avaliacaoId = '' } = {}) {
+  formularioMaterial(m, { cadeiraId, assunto, tipo: tipo || m.config.tiposMaterial[0]?.nome, origem: 'Minha', avaliacaoId });
 }
 
 export function editarMaterial(m, x) {
@@ -247,9 +292,11 @@ function formularioMaterial(m, x) {
       { nome: 'origem', rotulo: 'Origem', tipo: 'select', opcoes: ops(m.config.origensMaterial), valor: x.origem ?? 'Minha' },
       campoCadeira(m, x.cadeiraId ?? ''),
       campoAssunto(m, x.assunto ?? ''),
-      { nome: 'obs', rotulo: 'Observação', largo: true, valor: x.obs ?? '' },
+      ...campoAtalhos(m, x.cadeiraId, x.assunto, x.assuntosExtra),
+      campoAvaliacao(m, x.cadeiraId, x.avaliacaoId ?? ''),
+      { nome: 'obs', rotulo: 'Observação', tipo: 'textarea', largo: true, valor: x.obs ?? '', dica: 'Links colados aqui ficam clicáveis.' },
     ],
-    previa: (v) => (v.arquivo || x.driveId ? previaDestino(m, { cadeiraId: v.cadeira_id, assunto: v.assunto, origem: v.origem }) : ''),
+    previa: (v) => (v.arquivo || x.driveId ? previaDestino(m, { cadeiraId: v.cadeira_id, assunto: v.assunto, origem: v.origem, categoria: v.avaliacao_id && !v.assunto ? 'avaliacao' : 'material' }) : ''),
     aoSalvar: async (v, progresso) => {
       const { arquivo, ...campos } = v;
       if (editar) {
@@ -267,7 +314,10 @@ function formularioMaterial(m, x) {
       if (arquivo) {
         const igual = m.materiais.find((y) => y.hash && y.nomeOriginal === arquivo.name && y.cadeiraId === campos.cadeira_id);
         if (igual) throw new Error(`Este arquivo já está no Código M: “${igual.titulo}”.`);
-        r = await guardarArquivo(m, arquivo, { cadeiraId: campos.cadeira_id, assunto: campos.assunto, origem: campos.origem, tipo: campos.tipo, progresso });
+        r = await guardarArquivo(m, arquivo, {
+          cadeiraId: campos.cadeira_id, assunto: campos.assunto, origem: campos.origem, tipo: campos.tipo, progresso,
+          categoria: campos.avaliacao_id && !campos.assunto ? 'avaliacao' : 'material',
+        });
         const repetido = r.hash && m.materiais.find((y) => y.hash === r.hash);
         if (repetido) throw new Error(`Este arquivo já foi enviado antes: “${repetido.titulo}”. Nada foi duplicado.`);
       }
@@ -363,6 +413,7 @@ export const REGISTROS = [
   { tipo: 'duvida', nome: 'Dúvida', icone: 'duvidas', abrir: novaDuvida },
   { tipo: 'questao', nome: 'Questão', icone: 'questoes', abrir: novaQuestao },
   { tipo: 'estudo', nome: 'Estudo', icone: 'estudo', abrir: (m, x) => novoEstudo(m, { ...x, data: '' }) },
+  { tipo: 'atividade', nome: 'Atividade (trabalho, extra…)', icone: 'trabalho', abrir: (m, x) => novoEstudo(m, { ...x, data: '', tipo: 'Escrevendo trabalho' }) },
   { tipo: 'cartao', nome: 'Cartão', icone: 'flashcard', abrir: novoCartao },
   { tipo: 'material', nome: 'Material', icone: 'materiais', abrir: novoMaterial },
   { tipo: 'avaliacao', nome: 'Avaliação', icone: 'avaliacoes', abrir: novaAvaliacao },

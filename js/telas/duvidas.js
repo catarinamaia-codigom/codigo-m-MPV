@@ -1,7 +1,7 @@
 // Tela DÚVIDAS — aba única na planilha. Tentativa própria ao lado da resposta
 // conferida com fonte. Sanar em qualquer tela atualiza todas.
 
-import { esc } from '../util/texto.js';
+import { esc, linkificar } from '../util/texto.js';
 import { formatoCurto } from '../util/datas.js';
 import { icone } from '../ui/icones.js';
 import { chips, seletorCadeira, ligarFiltros, vazio, aviso, copiar, casa, kpi } from '../ui/componentes.js';
@@ -10,32 +10,81 @@ import { nomeCadeira } from '../dados/consultas.js';
 import { novaDuvida, responderDuvida, novoCartao } from './formularios.js';
 import { mostrarImagens } from '../dados/drive.js';
 
-const estado = { status: 'abertas', cadeira: '', busca: '' };
+const estado = { status: 'abertas', cadeira: '', busca: '', motivo: '' };
+
+/** Chips de filtro pelos motivos (tipos) que aparecem na lista. */
+export function chipsMotivo(duvidas, atual, nome = 'motivo') {
+  const motivos = [...new Set(duvidas.map((d) => d.motivo).filter(Boolean))];
+  if (!motivos.length) return '';
+  return chips(nome, [['', 'Todos os tipos'], ...motivos.map((x) => [x, `${x} (${duvidas.filter((d) => d.motivo === x).length})`])], atual);
+}
 
 /** Cartão de uma dúvida (também usado na página do assunto). */
-export function cartaoDuvida(m, d, { mostrarCadeira = true } = {}) {
+export function cartaoDuvida(m, d, { mostrarCadeira = true, atalho = false } = {}) {
   const link = d.link ? `<a href="${esc(d.link)}" target="_blank" rel="noopener">${icone('externo', 'ic-mini')} link</a>` : '';
+  const material = d.materialId && m.materiais.find((x) => x.id === d.materialId);
+  const temResposta = Boolean(d.tentativa || d.resposta);
+  const previa = (d.resposta || d.tentativa).replace(/\s+/g, ' ').slice(0, 90);
   return `
     <article class="duvida ${d.sanada ? 'sanada' : ''}">
       <div class="duvida-topo">
         <button class="duvida-marca" data-sanar="${esc(d.id)}" title="${d.sanada ? 'Reabrir' : 'Marcar como sanada'}" aria-label="${d.sanada ? 'Reabrir dúvida' : 'Marcar dúvida como sanada'}">${icone(d.sanada ? 'checkCirculo' : 'circulo')}</button>
         <div class="duvida-texto">
           <strong>${esc(d.pergunta)}</strong>
-          <p class="meta">${mostrarCadeira ? `<a href="#/cadeiras/${encodeURIComponent(d.cadeiraId)}${d.assunto ? `/${encodeURIComponent(d.assunto)}` : ''}">${esc(nomeCadeira(m, d.cadeiraId))}${d.assunto ? ` · ${esc(d.assunto)}` : ''}</a> · ` : ''}${d.criada ? formatoCurto(d.criada) : ''}${d.motivo ? ` · ${esc(d.motivo)}` : ''}${d.sanada && d.sanadaEm ? ` · sanada em ${formatoCurto(d.sanadaEm)}` : ''}</p>
+          <p class="meta">${mostrarCadeira ? `<a href="#/cadeiras/${encodeURIComponent(d.cadeiraId)}${d.assunto ? `/${encodeURIComponent(d.assunto)}` : ''}">${esc(nomeCadeira(m, d.cadeiraId))}${d.assunto ? ` · ${esc(d.assunto)}` : ''}</a> · ` : ''}${d.criada ? formatoCurto(d.criada) : ''}${d.motivo ? ` · <span class="tag tag-motivo">${esc(d.motivo)}</span>` : ''}${d.sanada && d.sanadaEm ? ` · sanada em ${formatoCurto(d.sanadaEm)}` : ''}
+            ${atalho ? ` · <span class="tag tag-atalho">${icone('link', 'ic-mini')} atalho de ${esc(d.assunto)}</span>` : ''}
+            ${material ? ` · <button class="link-botao tag tag-material" data-ver-material="${esc(material.id)}" title="Abrir o material ligado">${icone('materiais', 'ic-mini')} ${esc(material.titulo)}</button>` : ''}</p>
         </div>
         <div class="duvida-acoes">
-          <button class="btn-mini" data-responder="${esc(d.id)}">${icone('anotacao', 'ic-mini')} ${d.resposta || d.tentativa ? 'Editar' : 'Responder'}</button>
+          <button class="btn-mini" data-responder="${esc(d.id)}">${icone('anotacao', 'ic-mini')} ${temResposta ? 'Editar' : 'Responder'}</button>
           <button class="btn-mini" data-tutor="${esc(d.id)}" title="Copia um prompt de tutor e abre o chat">${icone('ia', 'ic-mini')} Tutor</button>
           <button class="btn-mini" data-cartao="${esc(d.id)}" title="Transformar em cartão do Método Catarina">${icone('flashcard', 'ic-mini')} Cartão</button>
         </div>
       </div>
       ${d.imagem ? `<img class="duvida-imagem" data-imagem-drive="${esc(d.imagem)}" alt="Imagem da dúvida">` : ''}
-      ${d.tentativa || d.resposta ? `<div class="duvida-lados">
-        <div><span class="rotulo-lado">Minha tentativa</span><p>${esc(d.tentativa) || '<span class="meta">—</span>'}</p></div>
-        <div><span class="rotulo-lado">Resposta conferida</span><p>${esc(d.resposta) || '<span class="meta">ainda não conferida</span>'}</p>
-          ${d.fonte || link ? `<p class="meta">${d.fonte ? `Fonte: ${esc(d.fonte)} ` : ''}${link}</p>` : ''}</div>
-      </div>` : ''}
+      ${temResposta || !d.sanada ? `<details class="duvida-resposta">
+        <summary>
+          <span class="dr-rotulo">${icone('proximo', 'ic-mini seta-recolher')} ${temResposta ? 'Ver resposta' : 'Responder'}</span>
+          ${temResposta ? `<span class="dr-previa">${esc(previa)}${(d.resposta || d.tentativa).length > 90 ? '…' : ''}</span>` : ''}
+          ${!d.resposta ? `<button class="colar-verde" data-colar-resposta="${esc(d.id)}" title="Cola o que está copiado como resposta conferida">${icone('colar', 'ic-mini')} colar resposta</button>` : ''}
+        </summary>
+        <div class="duvida-lados">
+          <div><span class="rotulo-lado">Minha tentativa</span><p>${linkificar(d.tentativa) || '<span class="meta">—</span>'}</p></div>
+          <div class="lado-verde" data-colar-resposta="${esc(d.id)}" role="button" tabindex="0" title="Clique para colar a resposta conferida que você copiou">
+            <span class="rotulo-lado">Resposta conferida ${icone('colar', 'ic-mini')}</span>
+            <p>${linkificar(d.resposta) || '<span class="meta">clique aqui para colar a resposta que você copiou</span>'}</p>
+            ${d.fonte || link ? `<p class="meta">${d.fonte ? `Fonte: ${linkificar(d.fonte)} ` : ''}${link}</p>` : ''}</div>
+        </div>
+      </details>` : ''}
     </article>`;
+}
+
+/**
+ * Cola o texto copiado como resposta conferida. Sem resposta: grava direto.
+ * Já com resposta: abre o formulário com o texto novo no fim, para revisar.
+ */
+async function colarResposta(m, d) {
+  let texto = '';
+  try {
+    texto = (await navigator.clipboard.readText()).trim();
+  } catch {
+    /* navegador não deixou ler a área de transferência */
+  }
+  if (!texto) {
+    responderDuvida(m, d);
+    aviso('Não consegui ler o que foi copiado: cole com ⌘V / Ctrl+V no campo “Resposta conferida”.');
+    return;
+  }
+  if (d.resposta) {
+    responderDuvida(m, d, { resposta: `${d.resposta}\n\n${texto}` });
+    return;
+  }
+  try {
+    await atualizar('Duvidas', d.id, { resposta: texto });
+    aviso('Resposta conferida colada.');
+  } catch (e) {
+    aviso(e.message);
+  }
 }
 
 /** Liga os botões dos cartões de dúvida dentro de "el". */
@@ -55,6 +104,22 @@ export function ligarDuvidas(el, m) {
     })
   );
   el.querySelectorAll('[data-responder]').forEach((b) => b.addEventListener('click', () => responderDuvida(m, achar(b.dataset.responder))));
+  el.querySelectorAll('[data-colar-resposta]').forEach((b) => {
+    const colar = (e) => {
+      if (e.target.closest('a')) return; // link dentro da resposta: só abre o link
+      e.preventDefault();
+      e.stopPropagation();
+      colarResposta(m, achar(b.dataset.colarResposta));
+    };
+    b.addEventListener('click', colar);
+    b.addEventListener('keydown', (e) => (e.key === 'Enter' || e.key === ' ') && colar(e));
+  });
+  el.querySelectorAll('.duvida [data-ver-material]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      const { abrirMaterial } = await import('./materiais.js');
+      abrirMaterial(m, m.materiais.find((x) => x.id === b.dataset.verMaterial));
+    })
+  );
   el.querySelectorAll('[data-cartao]').forEach((b) =>
     b.addEventListener('click', () => {
       const d = achar(b.dataset.cartao);
@@ -80,6 +145,7 @@ export function render(el, m) {
     (d) =>
       (estado.status === 'todas' || (estado.status === 'abertas') !== d.sanada) &&
       (!estado.cadeira || d.cadeiraId === estado.cadeira) &&
+      (!estado.motivo || d.motivo === estado.motivo) &&
       casa(`${d.pergunta} ${d.assunto} ${d.resposta} ${d.tentativa}`, estado.busca)
   );
   const semTentativa = abertas.filter((d) => !d.tentativa).length;
@@ -100,6 +166,7 @@ export function render(el, m) {
     </div>
     <div class="filtros">
       ${chips('status', [['abertas', 'Em aberto'], ['sanadas', 'Sanadas'], ['todas', 'Todas']], estado.status)}
+      ${chipsMotivo(m.duvidas, estado.motivo)}
       ${seletorCadeira(m, estado.cadeira)}
       <input class="filtro-texto" type="search" placeholder="Buscar nas dúvidas" data-filtro-texto="busca" value="${esc(estado.busca)}">
     </div>

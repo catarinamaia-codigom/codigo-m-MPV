@@ -9,7 +9,8 @@ import {
 import { icone } from '../ui/icones.js';
 import { abrirModal, fecharModal, aviso, vazio, casa } from '../ui/componentes.js';
 import { atualizar } from '../dados/dataSource.js';
-import { editarEstudo, editarAvaliacao, novoEstudo } from './formularios.js';
+import { editarEstudo, novoEstudo } from './formularios.js';
+import { abrirAvaliacao } from './avaliacao.js';
 import { linhaEstudo, ligarEstudos } from './cadeiras.js';
 import { nomeCadeira, cadeiraPorId, moduloPorId, feriadoDoDia } from '../dados/consultas.js';
 import { formatoCurto } from '../util/datas.js';
@@ -173,7 +174,7 @@ function detalhe(m, tipo, id) {
   } else if (tipo === 'estudo') {
     editarEstudo(m, m.estudos.find((x) => x.id === id));
   } else {
-    editarAvaliacao(m, m.avaliacoes.find((x) => x.id === id));
+    abrirAvaliacao(m, m.avaliacoes.find((x) => x.id === id));
   }
 }
 
