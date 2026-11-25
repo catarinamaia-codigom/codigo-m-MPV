@@ -32,6 +32,25 @@ Site estático (HTML, CSS e JavaScript puros, sem build), publicado de graça no
 - Com **Entrar com Google**, tudo grava na planilha "Código M - Dados". As abas novas são criadas
   sozinhas no próximo login (veja `docs/PLANILHA.md`).
 
+**Ideias de 25/11 (lista da caixinha):**
+- **Materiais**: material anexado numa avaliação também aparece no material geral da cadeira e pode ser ligado a aulas/assuntos;
+  um material ou dúvida pode aparecer em **mais de um assunto** (atalho); links colados em observações, conteúdos e respostas ficam
+  **clicáveis**; tipos novos **Goodnotes | Pessoal / Colaborativo** (atalhos no topo do assunto), **Gravação de aula**, **Link de site**,
+  **Trabalho da disciplina** e **Trabalho extra**.
+- **Visualizador lateral**: gravações e arquivos do Drive e vídeos do YouTube tocam/abrem **dentro do site**, num painel à direita
+  (embaixo no celular), com as dúvidas visíveis ao lado e botões **+ Dúvida**, **Baixar** (sem abrir a pasta do Drive) e **Excluir**.
+- **Excluir em duas etapas**: o material vai para **Pendências › A excluir**; lá você restaura ou confirma (o arquivo vai para a lixeira do Drive).
+- **Dúvidas**: mais novas em cima; filtro por tipo; resposta **recolhida**; clicar no **quadro verde** (ou em "colar resposta") cola o que
+  você copiou como resposta conferida; dúvida ligada a um material; motivos novos **Errei questão**, **Não conhecia**, **Curiosidade**.
+- **Avaliação como assunto**: clicar numa avaliação abre um painel com conteúdo, observação, **materiais** e **atividades** dela.
+- **Atividades de execução** (Escrevendo trabalho, Atividade extra, Atividade estratégica, Foco residência) com observação; aparecem
+  na cadeira (cartão "Atividades e trabalhos") e na avaliação ligada. Também no "+ Registrar".
+- **Assuntos**: **+ Assunto** dentro da cadeira; **Renomear / mover** (muda o nome ou a cadeira em todas as abas e, no Drive, a pasta e
+  os nomes dos arquivos); **cadeira secundária** (o assunto aparece como atalho em outra cadeira); trocar o assunto de **uma aula só**.
+- **Cadeiras e zonas de interesse**: **+ Cadeira** e **+ Zona de interesse** (bloco próprio de estudo e pesquisa, com linhas e assuntos).
+- **Pergunta de estudo ativo** (Materiais): sorteia de cartões, dúvidas sanadas e modelos sobre assuntos já vistos.
+- **Celular**: página do assunto em uma coluna; dúvidas, questões, cartões e estudos começam recolhidos.
+
 **Drive (04/11):** o site envia arquivos (PDF, imagens, prints colados com ⌘V, gravações) para o lugar
 certo de `20-Medicina`, criando as pastas que faltam, e move o arquivo quando o assunto muda. Mostra
 "Enviado ao Drive" só depois que o Drive devolve o ID real. Precisa da Google Drive API ativada e do

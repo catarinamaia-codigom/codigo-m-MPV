@@ -31,12 +31,21 @@ Cada item de lista é **uma linha**, para ser fácil incluir ou apagar.
 | `notas` | `media_aprovacao` (padrão 7), `media_final` (padrão 5) | `media_final` = `5` |
 | `motivo_questao` | chave = motivo de erro de questão (vários por questão) | `Li errado / desatenção` |
 | `metodo` | `retencao_desejada` (0,7 a 0,97; padrão 0,9), `novos_por_dia` (padrão 20) | `novos_por_dia` = `15` |
+| `tipo_atividade` | chave = tipo de atividade de execução (além dos padrões) | `Escrevendo trabalho` |
+| `pergunta_ativa` | valor = modelo de pergunta de estudo ativo (`{assunto}`, `{cadeira}`, `{outro}`); substitui os modelos padrão | `Explique {assunto} sem consultar.` |
+
+O site sempre oferece, mesmo sem estarem na Config: motivos de dúvida **Errei questão**, **Não conhecia**
+e **Curiosidade**; tipos de material **Gravação de aula**, **Goodnotes | Pessoal**, **Goodnotes | Colaborativo**,
+**Link de site**, **Trabalho da disciplina** e **Trabalho extra**; tipos de atividade **Estudo**,
+**Escrevendo trabalho**, **Atividade extra**, **Atividade estratégica** e **Atividade de foco residência**.
 
 Ícones disponíveis para `tipo_material`: `slide`, `resumo`, `mapa`, `flashcard`,
 `questoes`, `video`, `livro`, `anotacao`, `prova`, `arquivo`.
 
 ## Modulos
-`id | periodo | nome | ordem`
+`id | periodo | nome | ordem | tipo`
+
+`tipo` = `Zona de interesse` para blocos próprios de estudo e pesquisa (fora do curso; `periodo` = `Livre`). Vazio = módulo do curso.
 
 ## Cadeiras
 `id | modulo_id | nome | ordem`
@@ -57,7 +66,10 @@ Cada item de lista é **uma linha**, para ser fácil incluir ou apagar.
 `conteudo`: assuntos separados por `;`.
 
 ## Estudos (o que a Catarina marca para estudar)
-`id | data | inicio | fim | cadeira_id | assunto | atividade | feito`
+`id | data | inicio | fim | cadeira_id | assunto | atividade | feito | tipo | obs | avaliacao_id`
+
+- `tipo`: Estudo (padrão) ou atividade de execução (Escrevendo trabalho, Atividade extra…). Atividades aparecem na cadeira e na avaliação ligada (`avaliacao_id`).
+- `obs`: observação livre; links colados ficam clicáveis.
 
 - `data` pode ficar vazia: o estudo aparece em "Para estudar" (Início e Calendário). Ao marcar como feito, recebe a data de hoje.
 
@@ -77,7 +89,9 @@ O site cria estas abas sozinho no próximo login, só com o cabeçalho. Se uma a
 antiga não tiver alguma coluna nova, ela é acrescentada **no fim** do cabeçalho.
 
 ### Duvidas
-`id | criada | cadeira_id | assunto | pergunta | motivo | tentativa | resposta | fonte | link | status | sanada_em`
+`id | criada | cadeira_id | assunto | pergunta | motivo | tentativa | resposta | fonte | link | status | sanada_em | imagem | material_id | assuntos_extra`
+
+`material_id`: material ligado à dúvida. `assuntos_extra`: outros assuntos onde a dúvida aparece como atalho (`cadeira_id::assunto; …`). As mais novas aparecem em cima.
 
 `imagem`: ID do arquivo no Drive. `status`: Aberta / Sanada. `tentativa` = o que você respondeu sem consultar; `resposta` = conferida com fonte.
 
@@ -96,7 +110,11 @@ Chute com confiança 1–2 conta como erro; com 4–5 conta acerto, mas pede apr
 `bonus` = `sim` para nota extra (soma direto na média). `cadeira_id` pode ser o id de um módulo (PIs).
 
 ### Materiais
-`id | criado | cadeira_id | assunto | tipo | titulo | link | origem | copiado | obs | drive_id | hash | nome_original`
+`id | criado | cadeira_id | assunto | tipo | titulo | link | origem | copiado | obs | drive_id | hash | nome_original | autor | avaliacao_id | assuntos_extra | status`
+
+- `avaliacao_id`: material anexado a uma avaliação (aparece na avaliação e no material geral da cadeira).
+- `assuntos_extra`: outros assuntos/aulas onde o material aparece como atalho (`cadeira_id::assunto; …`).
+- `status`: vazio = ativo; `A excluir` = esperando confirmação em Pendências › A excluir; `Excluído` = confirmado (o arquivo foi para a lixeira do Drive).
 
 `drive_id` só é preenchido depois que o Drive devolve o ID real do arquivo. `hash` reconhece o reenvio do mesmo arquivo. O site também lê linhas gravadas pelo script do Classroom.
 
@@ -111,6 +129,12 @@ Chute com confiança 1–2 conta como erro; com 4–5 conta acerto, mas pede apr
 `data | cartao_id | nota | intervalo`
 
 `nota`: 1 Errei, 2 Difícil, 3 Bom, 4 Fácil. Base das estatísticas do Método Catarina.
+
+### Assuntos (criados à mão e cadeira secundária)
+`id | cadeira_id | assunto | cadeira_secundaria | criado | obs`
+
+Assunto sem aula no cronograma (estudo próprio, pesquisa) e/ou ligação com uma 2ª cadeira, onde o assunto aparece como atalho.
+Renomear ou mudar um assunto de cadeira (botão na página do assunto) atualiza todas as abas e, no Drive, a pasta e os nomes dos arquivos.
 
 ## Onde o site guarda arquivos no Drive
 
