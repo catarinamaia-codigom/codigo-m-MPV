@@ -121,7 +121,9 @@ Chute com confiança 1–2 conta como erro; com 4–5 conta acerto, mas pede apr
 `tipo`: um dos `tipo_material` da Config. `origem`: Minha / Turma / Professor / Livro / IA. `copiado`: TRUE/FALSE (material da turma já copiado para a sua pasta).
 
 ### Cartoes (Método Catarina)
-`id | criado | cadeira_id | assunto | frente | verso | fonte | origem | vence | estabilidade | dificuldade | revisoes | lapsos | ultima | imagem_frente | imagem_verso`
+`id | criado | cadeira_id | assunto | frente | verso | fonte | origem | vence | estabilidade | dificuldade | revisoes | lapsos | ultima | imagem_frente | imagem_verso | anki_id`
+
+`anki_id`: identificação do cartão no Anki (nota + número do cartão) — reimportar o mesmo baralho não duplica.
 
 `origem`: Validado (escritos por você, têm prioridade) / Anki / IA. As colunas `vence` a `ultima` são do agendamento FSRS: o site preenche.
 

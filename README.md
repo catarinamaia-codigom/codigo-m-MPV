@@ -51,6 +51,15 @@ Site estático (HTML, CSS e JavaScript puros, sem build), publicado de graça no
 - **Pergunta de estudo ativo** (Materiais): sorteia de cartões, dúvidas sanadas e modelos sobre assuntos já vistos.
 - **Celular**: página do assunto em uma coluna; dúvidas, questões, cartões e estudos começam recolhidos.
 
+**Importar do Anki (26/11):** Método Catarina › **Importar do Anki** aceita o baralho **.apkg** (e o backup
+**.colpkg**) dos formatos novo e antigo do Anki. Pergunta simples, básico com inverso, digitar a resposta,
+**omissão de palavras** (um cartão por lacuna, com dica) e **oclusão de imagem** (nativa e do complemento antigo)
+viram cartões com imagem: o site desenha as máscaras e guarda a imagem no Drive, na pasta [Cartoes] do assunto.
+Cada baralho vai para a cadeira/assunto que você escolher (sugeridos pelo nome), o progresso dos cartões já
+estudados vem junto (FSRS do Anki ou estimado pelo intervalo) e reimportar não duplica. Tudo no navegador,
+sem servidor e sem IA: bibliotecas abertas (MIT) em `js/vendor/` (sql.js, fflate, fzstd), carregadas só na
+hora de importar. Testes com baralhos gerados pelo próprio Anki (`ferramentas/criar_apkg_teste.py`).
+
 **Drive (04/11):** o site envia arquivos (PDF, imagens, prints colados com ⌘V, gravações) para o lugar
 certo de `20-Medicina`, criando as pastas que faltam, e move o arquivo quando o assunto muda. Mostra
 "Enviado ao Drive" só depois que o Drive devolve o ID real. Precisa da Google Drive API ativada e do
@@ -90,7 +99,10 @@ js/dados/consultas.js      consultas usadas pelas telas
 js/regras/sugestoes.js     sugestão de estudo por regras, com motivo
 js/telas/                  uma tela por arquivo + formularios.js (todos os "+ Registrar")
 js/regras/                 sugestões, FSRS (fsrs.js), notas, domínio, importação do backup antigo
-js/ui/                     ícones e componentes
+js/ui/                     ícones, componentes, formulários e visualizador lateral
+js/regras/anki.js          leitura de baralhos do Anki (modelos, cloze, oclusão, progresso)
+js/dados/apkg.js           abre .apkg/.colpkg no navegador e desenha as imagens dos cartões
+js/vendor/                 sql.js, fflate e fzstd (MIT), só para importar do Anki
 docs/PLANILHA.md           abas e colunas da planilha / do JSON
 ```
 

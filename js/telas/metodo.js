@@ -4,13 +4,14 @@
 import { esc } from '../util/texto.js';
 import { somarDias, diasEntre, formatoCurto } from '../util/datas.js';
 import { icone } from '../ui/icones.js';
-import { kpi, vazio, aviso, seletorCadeira, ligarFiltros, abrirModal, fecharModal, casa } from '../ui/componentes.js';
-import { atualizar, adicionar, adicionarVarias, avisarMudanca, emSimulacao } from '../dados/dataSource.js';
+import { kpi, vazio, aviso, seletorCadeira, ligarFiltros, casa } from '../ui/componentes.js';
+import { atualizar, adicionar, avisarMudanca, emSimulacao } from '../dados/dataSource.js';
 import { nomeCadeira } from '../dados/consultas.js';
 import { revisar, previa } from '../regras/fsrs.js';
-import { novoCartao, opcoesCadeira } from './formularios.js';
+import { novoCartao } from './formularios.js';
 import { mesmoAssunto } from '../regras/dominio.js';
 import { mostrarImagens } from '../dados/drive.js';
+import { importarAnki } from './importarAnki.js';
 
 const estado = { cadeira: '', assunto: '', busca: '' };
 let sessao = null; // { fila: [ids], i, mostrando, feitos }
@@ -134,56 +135,6 @@ function telaRevisao(el, m) {
 }
 let teclas = () => {};
 document.addEventListener('keydown', (e) => teclas(e));
-
-function importarAnki(m) {
-  abrirModal('Importar cartões do Anki', `
-    <div class="formulario">
-      <p class="formulario-intro">No Anki: <b>Arquivo → Exportar → “Notas em texto puro (.txt)”</b>. Cada linha vira um cartão (frente ⇥ verso). Também aceita CSV com ponto e vírgula. Os cartões entram como <b>automáticos</b> — os que você escreve no Código M continuam com prioridade.</p>
-      <div class="formulario-campos">
-        <div class="campo largo"><label for="anki-arq">Arquivo</label><input id="anki-arq" type="file" accept=".txt,.tsv,.csv,text/plain"></div>
-        <div class="campo"><label for="anki-cad">Cadeira</label><select id="anki-cad">${opcoesCadeira(m).map((o) => `<option value="${esc(o.valor)}">${esc(o.texto)}</option>`).join('')}</select></div>
-        <div class="campo"><label for="anki-ass">Assunto <small>(opcional)</small></label><input id="anki-ass"></div>
-      </div>
-      <p class="formulario-erro" hidden></p>
-      <div class="previa-import" id="anki-previa"></div>
-      <div class="formulario-acoes"><button class="btn" data-fechar>Cancelar</button><button class="btn btn-principal" id="anki-ok" disabled>Importar</button></div>
-    </div>`);
-  let linhas = [];
-  const limpar = (t) => t.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim();
-  document.getElementById('anki-arq').addEventListener('change', async (e) => {
-    const texto = await e.target.files[0]?.text();
-    if (!texto) return;
-    linhas = texto
-      .split(/\r?\n/)
-      .filter((l) => l && !l.startsWith('#'))
-      .map((l) => (l.includes('\t') ? l.split('\t') : l.split(';')))
-      .filter((p) => p.length >= 2 && limpar(p[0]))
-      .map((p) => ({ frente: limpar(p[0]), verso: limpar(p[1]) }));
-    document.getElementById('anki-previa').innerHTML = linhas.length
-      ? `<p><b>${linhas.length}</b> cartão(ões) encontrados. Primeiro: “${esc(linhas[0].frente.slice(0, 120))}”</p>`
-      : '<p>Não encontrei cartões neste arquivo.</p>';
-    document.getElementById('anki-ok').disabled = !linhas.length;
-  });
-  document.getElementById('anki-ok').addEventListener('click', async (e) => {
-    e.target.disabled = true;
-    e.target.textContent = 'Importando…';
-    const cad = document.getElementById('anki-cad').value;
-    const ass = document.getElementById('anki-ass').value.trim();
-    const base = Date.now();
-    try {
-      await adicionarVarias('Cartoes', linhas.map((l, i) => ({
-        id: `C-${(base + i).toString(36)}`, criado: m.hoje, cadeira_id: cad, assunto: ass, frente: l.frente, verso: l.verso,
-        fonte: 'Anki', origem: 'Anki', vence: m.hoje, revisoes: 0, lapsos: 0,
-      })));
-      fecharModal();
-      aviso(`${linhas.length} cartões importados${emSimulacao() ? ' (simulação)' : ''}.`);
-    } catch (falha) {
-      e.target.disabled = false;
-      e.target.textContent = 'Importar';
-      aviso(falha.message);
-    }
-  });
-}
 
 export function render(el, m, params) {
   teclas = () => {};
