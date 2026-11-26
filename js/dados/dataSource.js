@@ -68,9 +68,9 @@ export async function adicionar(aba, objeto, { silencioso = false } = {}) {
 }
 
 /** Várias linhas novas numa aba, numa só gravação (importações). */
-export async function adicionarVarias(aba, objetos) {
+export async function adicionarVarias(aba, objetos, { silencioso = false } = {}) {
   await adaptador.adicionarLinhas(aba, objetos);
-  avisarMudanca();
+  if (!silencioso) avisarMudanca();
 }
 
 /** Altera campos de uma linha pelo id (ex.: atualizar('Estudos', 'E003', {feito: true})). */

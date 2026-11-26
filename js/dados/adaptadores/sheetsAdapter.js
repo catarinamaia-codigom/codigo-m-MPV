@@ -20,7 +20,7 @@ export const COLUNAS = {
   Questoes: ['id', 'data', 'cadeira_id', 'assunto', 'fonte', 'resultado', 'confianca', 'motivos', 'obs', 'imagem'],
   Notas: ['id', 'cadeira_id', 'avaliacao_id', 'nome', 'vale', 'peso', 'nota', 'bonus', 'obs'],
   Materiais: ['id', 'criado', 'cadeira_id', 'assunto', 'tipo', 'titulo', 'link', 'origem', 'copiado', 'obs', 'drive_id', 'hash', 'nome_original', 'autor', 'avaliacao_id', 'assuntos_extra', 'status'],
-  Cartoes: ['id', 'criado', 'cadeira_id', 'assunto', 'frente', 'verso', 'fonte', 'origem', 'vence', 'estabilidade', 'dificuldade', 'revisoes', 'lapsos', 'ultima', 'imagem_frente', 'imagem_verso'],
+  Cartoes: ['id', 'criado', 'cadeira_id', 'assunto', 'frente', 'verso', 'fonte', 'origem', 'vence', 'estabilidade', 'dificuldade', 'revisoes', 'lapsos', 'ultima', 'imagem_frente', 'imagem_verso', 'anki_id'],
   Revisoes: ['data', 'cartao_id', 'nota', 'intervalo'],
   Convites: ['email', 'convidado_em', 'papel', 'status', 'obs', 'nome', 'sigla'],
   // Assuntos criados à mão e ligação com uma 2ª cadeira (atalho)

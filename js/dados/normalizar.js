@@ -310,6 +310,7 @@ export function normalizar(abas, { modo = 'simulacao', hojeReal } = {}) {
       ultima: normalizarData(c.ultima),
       imagemFrente: txt(c.imagem_frente),
       imagemVerso: txt(c.imagem_verso),
+      ankiId: txt(c.anki_id),
     }))
     .filter((c) => c.id && c.frente);
 
