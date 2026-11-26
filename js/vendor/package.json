@@ -1,0 +1,4 @@
+{
+  "type": "commonjs",
+  "description": "sql-wasm.js é CommonJS/UMD; fflate.mjs e fzstd.mjs são módulos ES"
+}
