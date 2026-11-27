@@ -24,6 +24,28 @@ export function linkificar(texto) {
   });
 }
 
+/**
+ * Texto com formatação simples -> HTML seguro: **negrito**, *itálico*,
+ * ~~riscado~~, links clicáveis e emojis (que já são texto). A planilha guarda
+ * o texto com os sinais, legível mesmo sem o site.
+ */
+export function formatar(texto) {
+  return linkificar(texto)
+    .split(/(<[^>]+>)/)
+    .map((parte, i, partes) => {
+      if (parte.startsWith('<')) return parte;
+      if (partes[i - 1]?.startsWith('<a ')) return parte; // texto do link fica como está
+      return parte
+        .replace(/\*\*(?=\S)([\s\S]*?\S)\*\*/g, '<b>$1</b>')
+        .replace(/(^|[^*\w])\*(?=\S)([^*\n]*?\S)\*(?![*\w])/g, '$1<i>$2</i>')
+        .replace(/~~(?=\S)([\s\S]*?\S)~~/g, '<s>$1</s>');
+    })
+    .join('');
+}
+
+/** Tira os sinais de formatação (para prévias de uma linha). */
+export const semFormatacao = (texto) => String(texto ?? '').replace(/\*\*|~~/g, '').replace(/(^|\s)\*(\S[^*]*\S|\S)\*/g, '$1$2');
+
 /** "Bioquímica" -> "Bioquimica" */
 export function semAcentos(texto) {
   return String(texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '');

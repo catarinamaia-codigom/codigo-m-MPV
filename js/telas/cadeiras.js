@@ -3,7 +3,7 @@
 // material geral (filtrável por tipo) e faltas; a página do ASSUNTO reúne
 // aulas (com "teve aula" e "fui"), materiais, dúvidas, questões, cartões e estudos.
 
-import { esc, nomeArquivo, linkificar } from '../util/texto.js';
+import { esc, nomeArquivo, formatar } from '../util/texto.js';
 import { formatoCurto, contagemDias, DIAS_CURTOS, diaDaSemana, diasEntre } from '../util/datas.js';
 import { icone } from '../ui/icones.js';
 import { vazio, copiar, seloDominio, barra, kpi, aviso, cartaoRecolhivel, botaoMais, lembrarAberto, estaAberto, botoesNoTitulo, chips } from '../ui/componentes.js';
@@ -14,15 +14,19 @@ import { assuntosDaCadeira, dominioAssunto, dominioCadeira, mesmoAssunto, estati
 import { cartaoDuvida, ligarDuvidas, chipsMotivo } from './duvidas.js';
 import { linhaMaterial, ligarMateriais, materiaisDeAvaliacoes } from './materiais.js';
 import { abrirAvaliacao } from './avaliacao.js';
-import { novoAssunto, renomearAssunto, editarAssuntoDaAula, novaCadeira, novaZona } from './estrutura.js';
-import { revisarAssunto, cartoesVencidos } from './metodo.js';
+import { novoAssunto, renomearAssunto, formularioAula, atalhoEmOutraCadeira, novaCadeira, novaZona } from './estrutura.js';
+import { estudarAssunto, cartoesVencidos } from './metodo.js';
 import { calcularMedia } from '../regras/notas.js';
 import { mostrarImagens } from '../dados/drive.js';
+import { abrirModoAula } from '../ui/modoAula.js';
+import { gravarAudio } from '../ui/gravador.js';
 
 const dataCurta = (d) => `${DIAS_CURTOS[diaDaSemana(d)]} ${formatoCurto(d)}`;
 const pct = (x) => (x === null ? '—' : `${Math.round(x * 100)}%`);
 const filtroTipo = {}; // por cadeira/assunto: tipo de material escolhido
 const filtroMotivo = {}; // por assunto: tipo de dúvida escolhido
+const filtroDuvidasCadeira = {}; // por cadeira: abertas | respondidas | todas
+const respondida = (d) => d.sanada || Boolean(d.resposta);
 /** Tela de celular: seções secundárias começam recolhidas. */
 const celular = () => matchMedia('(max-width: 860px)').matches;
 
@@ -130,6 +134,9 @@ function detalhe(el, m, id) {
   const assuntos = assuntosDaCadeira(m, c.id);
   const dom = dominioCadeira(m, c.id);
   const abertas = m.duvidas.filter((d) => d.cadeiraId === c.id && !d.sanada);
+  const todasDuvidas = m.duvidas.filter((d) => d.cadeiraId === c.id);
+  const filtroDuv = filtroDuvidasCadeira[c.id] ?? 'abertas';
+  const duvidasVisiveis = todasDuvidas.filter((d) => filtroDuv === 'todas' || (filtroDuv === 'respondidas') === respondida(d));
   const notas = calcularMedia(m.notas.filter((n) => n.cadeiraId === c.id), m.config.notas);
   const faltas = faltasDaCadeira(m, c.id);
   const materiais = [...m.materiais.filter((x) => x.cadeiraId === c.id), ...materiaisDeAvaliacoes(m, { cadeiraId: c.id })];
@@ -149,7 +156,8 @@ function detalhe(el, m, id) {
       ${kpi({ rotulo: 'Aulas dadas', valor: `${r.dadas}/${r.aulas.length}` })}
       ${kpi({ rotulo: 'Faltas', valor: faltas, sub: 'aulas que tiveram e você não foi', tom: faltas ? 'alerta' : '' })}
       ${kpi({ rotulo: 'Domínio médio', valor: dom.vistos ? `${String(dom.media).replace('.', ',')}/5` : '—', sub: dom.vistos ? NIVEIS[dom.nivel].nome : 'nenhum assunto visto' })}
-      ${kpi({ rotulo: 'Dúvidas abertas', valor: abertas.length, tom: abertas.length ? 'alerta' : '', href: '#/duvidas' })}
+      ${kpi({ rotulo: 'Dúvidas abertas', valor: abertas.length, tom: abertas.length ? 'alerta' : '', href: `#/duvidas/${encodeURIComponent(c.id)}` })}
+      ${kpi({ rotulo: 'Dúvidas respondidas', valor: `${todasDuvidas.filter(respondida).length}/${todasDuvidas.length}`, sub: 'sanadas ou com resposta conferida', tom: todasDuvidas.length && todasDuvidas.every(respondida) ? 'ok' : '', href: `#/duvidas/${encodeURIComponent(c.id)}` })}
       ${kpi({ rotulo: 'Nota', valor: notas.vazio ? '—' : String(notas.media ?? notas.garantida).replace('.', ','), sub: notas.vazio ? 'sem notas' : notas.media !== null ? 'média final' : 'garantido até agora', href: '#/avaliacoes' })}
     </div>
     <div class="grade-cadeira">
@@ -181,8 +189,10 @@ function detalhe(el, m, id) {
           corpo: avs.length ? `<ul class="linha-avaliacoes clicavel">${avs.map((a) => linhaAvaliacao(m, a)).join('')}</ul>` : vazio('Nenhuma avaliação cadastrada.') })}
         ${cartaoRecolhivel({ titulo: 'Atividades e trabalhos', iconeNome: 'trabalho', chave: `atividades-${c.id}`, contagem: atividades.length, extra: botaoMais('atividade', 'Nova atividade'),
           corpo: atividades.length ? `<ul class="lista-estudos">${atividades.map((e) => linhaEstudo(m, e, { mostrarCadeira: false })).join('')}</ul>` : vazio('Escrevendo trabalho, atividade extra, estratégica, foco residência…') })}
-        ${cartaoRecolhivel({ titulo: 'Dúvidas abertas', iconeNome: 'duvidas', chave: `duvidas-${c.id}`, contagem: abertas.length, extra: botaoMais('duvida', 'Nova dúvida'),
-          corpo: `<div class="lista-duvidas compacta">${abertas.slice(0, 8).map((d) => cartaoDuvida(m, d)).join('') || vazio('Nenhuma dúvida aberta.')}</div>` })}
+        ${cartaoRecolhivel({ titulo: 'Dúvidas', iconeNome: 'duvidas', chave: `duvidas-${c.id}`, contagem: `${abertas.length} abertas · ${todasDuvidas.filter(respondida).length} respondidas`, extra: botaoMais('duvida', 'Nova dúvida'),
+          corpo: `<div class="filtro-motivo">${chips('duvCadeira', [['abertas', `Sem resposta (${todasDuvidas.filter((d) => !respondida(d)).length})`], ['respondidas', `Respondidas (${todasDuvidas.filter(respondida).length})`], ['todas', `Todas (${todasDuvidas.length})`]], filtroDuv)}</div>
+            <div class="lista-duvidas compacta">${duvidasVisiveis.slice(0, 30).map((d) => cartaoDuvida(m, d)).join('') || vazio(filtroDuv === 'abertas' ? 'Nenhuma dúvida sem resposta.' : 'Nenhuma dúvida aqui.')}</div>
+            ${duvidasVisiveis.length > 30 ? `<p class="meta"><a href="#/duvidas/${encodeURIComponent(c.id)}">Ver as ${duvidasVisiveis.length} na tela Dúvidas</a></p>` : ''}` })}
       </div>
     </div>`;
 
@@ -197,6 +207,12 @@ function detalhe(el, m, id) {
   ligarDuvidas(el, m);
   ligarMateriais(el, m);
   ligarFiltroTipo(el, () => detalhe(el, m, id));
+  el.querySelectorAll('[data-filtro="duvCadeira"]').forEach((b) =>
+    b.addEventListener('click', () => {
+      filtroDuvidasCadeira[c.id] = b.dataset.valor;
+      detalhe(el, m, id);
+    })
+  );
   botoesNoTitulo(el);
   lembrarAberto(el);
   mostrarImagens(el);
@@ -244,6 +260,9 @@ function paginaAssunto(el, m, id, assunto) {
   const cartoes = m.cartoes.filter(daqui);
   const paraRevisar = cartoesVencidos(m, daqui).length + cartoes.filter((x) => !x.revisoes).length;
   const estudos = m.estudos.filter(daqui);
+  const idsCartoes = new Set(cartoes.map((x) => x.id));
+  const revisoesAssunto = m.revisoes.filter((r) => idsCartoes.has(r.cartaoId));
+  const ultimaRevisao = revisoesAssunto.reduce((u, r) => (r.data > u ? r.data : u), '');
   const tipos = m.config.tiposMaterial;
   const dataBase = aulas.find((a) => a.data <= m.hoje)?.data ?? aulas[0]?.data ?? m.hoje;
   const faltas = aulas.filter((a) => a.aconteceu && !a.presente).length;
@@ -252,10 +271,11 @@ function paginaAssunto(el, m, id, assunto) {
     <header class="cabecalho cabecalho-linha">
       <div><p class="sobretitulo"><a href="#/cadeiras/${encodeURIComponent(id)}">${esc(nomeCadeira(m, id))}</a>${reg?.secundaria ? ` · também em <a href="#/cadeiras/${encodeURIComponent(reg.secundaria)}">${esc(nomeCadeira(m, reg.secundaria))}</a>` : ''}</p><h1>${esc(assunto)}</h1>
         <p class="dominio-linha">${seloDominio(d)} <span class="meta">${esc(d.motivo)}</span></p>
-        ${reg?.obs ? `<p class="assunto-obs">${linkificar(reg.obs)}</p>` : ''}</div>
+        ${reg?.obs ? `<p class="assunto-obs">${formatar(reg.obs)}</p>` : ''}</div>
       <div class="acoes-topo">
-        <button class="btn" data-renomear title="Mudar o nome, a cadeira ou ligar a uma cadeira secundária">${icone('anotacao', 'ic-mini')} Renomear / mover</button>
-        ${cartoes.length ? `<button class="btn btn-principal" data-revisar>${icone('metodo', 'ic-mini')} Revisar cartões (${paraRevisar})</button>` : ''}
+        <button class="btn" data-renomear title="Mudar o nome ou a cadeira de todo o assunto (planilha e Drive)">${icone('anotacao', 'ic-mini')} Renomear / mudar cadeira</button>
+        <button class="btn" data-atalho-cadeira title="Fazer o assunto aparecer também em outra cadeira">${icone('link', 'ic-mini')} Atalho em outra cadeira</button>
+        ${paraRevisar ? `<button class="btn btn-principal" data-revisar>${icone('metodo', 'ic-mini')} Revisar cartões (${paraRevisar})</button>` : ''}
       </div>
     </header>
     <div class="atalhos-goodnotes">
@@ -267,18 +287,19 @@ function paginaAssunto(el, m, id, assunto) {
     </div>
     <div class="grade-cadeira">
       <div class="coluna">
-        ${cartaoRecolhivel({ titulo: 'Aulas', iconeNome: 'aula', chave: 'assunto-aulas', aberto: aulas.length <= 3,
+        ${cartaoRecolhivel({ titulo: 'Aulas', iconeNome: 'aula', chave: 'assunto-aulas', aberto: aulas.length <= 3, extra: botaoMais('aula', 'Nova aula'),
           contagem: `${aulas.length} ${aulas.length === 1 ? 'data' : 'datas'}${faltas ? ` · ${faltas} falta${faltas > 1 ? 's' : ''}` : ''}`,
           corpo: aulas.length ? `<ul class="aulas-presenca">
             <li class="ap-cab"><span></span><span>teve aula</span><span>fui</span></li>
             ${aulas.map((a) => `<li class="${a.data === m.hoje ? 'hoje' : ''}">
-              <span><b>${esc(dataCurta(a.data))}</b> · ${esc(a.inicio)}–${esc(a.fim)} · ${esc(a.tipo)}${a.turma !== 'Todas' ? ` · ${esc(a.turma)}` : ''}
-                <button class="btn-mini btn-aula-assunto" data-assunto-aula="${esc(a.id)}" title="Esta aula foi sobre outro assunto? Trocar só esta aula" aria-label="Trocar o assunto da aula de ${esc(dataCurta(a.data))}">${icone('anotacao', 'ic-mini')}</button>
+              <span><b>${esc(dataCurta(a.data))}</b>${a.inicio ? ` · ${esc(a.inicio)}${a.fim ? `–${esc(a.fim)}` : ''}` : ''} · ${esc(a.tipo)}${a.turma !== 'Todas' ? ` · ${esc(a.turma)}` : ''}
+                <button class="btn-mini btn-aula-assunto" data-editar-aula="${esc(a.id)}" title="Editar esta aula: data, horário, cadeira, assunto" aria-label="Editar a aula de ${esc(dataCurta(a.data))}">${icone('anotacao', 'ic-mini')}</button>
                 <small class="meta">${esc([a.professor, a.local].filter(Boolean).join(' · '))}</small></span>
               <label class="ap-check" title="Teve aula"><input type="checkbox" data-aula="${esc(a.id)}" data-campo="aconteceu" ${a.aconteceu ? 'checked' : ''} aria-label="Teve aula em ${esc(dataCurta(a.data))}"></label>
               <label class="ap-check" title="Fui"><input type="checkbox" data-aula="${esc(a.id)}" data-campo="presente" ${a.presente ? 'checked' : ''} aria-label="Fui à aula de ${esc(dataCurta(a.data))}"></label>
-            </li>`).join('')}</ul>` : vazio('Sem aula no cronograma para este assunto.') })}
-        ${cartaoRecolhivel({ titulo: 'Materiais', iconeNome: 'materiais', chave: 'assunto-materiais', contagem: materiais.length, extra: botaoMais('material', 'Adicionar material'),
+            </li>`).join('')}</ul>` : vazio('Sem aula no cronograma para este assunto. Use + para inserir uma.') })}
+        ${cartaoRecolhivel({ titulo: 'Materiais', iconeNome: 'materiais', chave: 'assunto-materiais', contagem: materiais.length,
+          extra: `<button class="btn-mais" data-mais="gravar" title="Gravar áudio da aula" aria-label="Gravar áudio da aula">${icone('microfone', 'ic-mini')}</button>${botaoMais('material', 'Adicionar material')}`,
           corpo: `${blocoMateriais(m, materiais, `ass-${id}-${assunto}`, { atalho: ehAtalho })}
             <div class="ferramenta-arquivo"><span class="meta">Nome de arquivo:</span>
               <select id="tipo-arquivo" aria-label="Tipo de material">${tipos.map((t, i) => `<option value="${i}" ${i === 1 ? 'selected' : ''}>${esc(t.nome)}</option>`).join('')}</select>
@@ -287,14 +308,25 @@ function paginaAssunto(el, m, id, assunto) {
           corpo: estudos.length ? `<ul class="lista-estudos">${estudos.map((e) => linhaEstudo(m, e, { mostrarCadeira: false })).join('')}</ul>` : vazio('Nenhum estudo marcado para este assunto.') })}
       </div>
       <div class="coluna">
-        ${cartaoRecolhivel({ titulo: 'Dúvidas', iconeNome: 'duvidas', chave: celular() ? 'assunto-duvidas-cel' : 'assunto-duvidas', aberto: !celular(), contagem: `${todasDuvidas.filter((x) => !x.sanada).length} abertas`, extra: botaoMais('duvida', 'Nova dúvida'),
+        ${cartaoRecolhivel({ titulo: 'Dúvidas', iconeNome: 'duvidas', chave: celular() ? 'assunto-duvidas-cel' : 'assunto-duvidas', aberto: !celular(), contagem: `${todasDuvidas.filter((x) => !x.sanada).length} abertas`,
+          extra: `<button class="btn-mais btn-modo-aula" data-mais="modoAula" title="Modo aula: anotar várias dúvidas seguidas" aria-label="Modo aula: várias dúvidas">${icone('questoes', 'ic-mini')}</button>${botaoMais('duvida', 'Nova dúvida')}`,
           corpo: `${todasDuvidas.length > 1 ? `<div class="filtro-motivo">${chipsMotivo(todasDuvidas, filtroMotivo[chaveMotivo] ?? '', 'motivoAssunto')}</div>` : ''}
             <div class="lista-duvidas compacta">${duvidas.map((x) => cartaoDuvida(m, x, { mostrarCadeira: false, atalho: ehAtalho(x) })).join('') || vazio(todasDuvidas.length ? 'Nenhuma dúvida desse tipo.' : 'Nenhuma dúvida registrada.')}</div>` })}
         ${cartaoRecolhivel({ titulo: 'Questões', iconeNome: 'questoes', chave: celular() ? 'assunto-questoes-cel' : 'assunto-questoes', aberto: !celular(), contagem: est.total, extra: botaoMais('questao', 'Registrar questão'),
           corpo: est.total ? `<p><b>${pct(est.taxa)}</b> de acerto efetivo · ${est.chutes} chute(s) · ${est.aprofundar} pedem aprofundamento</p>
             <ul class="lista-simples">${qs.slice(0, 8).map((q) => `<li><span><span class="res res-${q.resultado.toLowerCase()}">${esc(q.resultado)}</span>${q.imagem ? ` <button class="link-botao" data-ver-imagem="${esc(q.imagem)}">${icone('imagem', 'ic-mini')} print</button>` : ''}</span><span class="meta">${q.data ? formatoCurto(q.data) : ''} · conf. ${q.confianca}${q.motivos.length ? ` · ${esc(q.motivos.join(', '))}` : ''}</span></li>`).join('')}</ul>` : vazio('Nenhuma questão registrada.') })}
         ${cartaoRecolhivel({ titulo: 'Cartões', iconeNome: 'flashcard', chave: celular() ? 'assunto-cartoes-cel' : 'assunto-cartoes', aberto: !celular(), contagem: cartoes.length, extra: botaoMais('cartao', 'Novo cartão'),
-          corpo: cartoes.length ? `<ul class="lista-simples">${cartoes.slice(0, 8).map((x) => `<li><b>${esc(x.frente.slice(0, 100))}${x.imagemFrente ? ' 🖼' : ''}</b><span class="meta">${x.revisoes ? `próxima ${formatoCurto(x.vence)}` : 'novo'}</span></li>`).join('')}</ul>` : vazio('Sem cartões. Transforme uma dúvida em cartão.') })}
+          corpo: cartoes.length ? `
+            <div class="cartoes-resumo">
+              <button class="cr-numero" data-estudar="todos" title="Estudar todos os cartões deste assunto"><b>${cartoes.length}</b><span>${cartoes.length === 1 ? 'cartão' : 'cartões'}</span></button>
+              <div class="cr-texto"><span>${revisoesAssunto.length ? `estudados ${revisoesAssunto.length} ${revisoesAssunto.length === 1 ? 'vez' : 'vezes'} · última em ${formatoCurto(ultimaRevisao)}` : 'ainda não estudados'}</span>
+                <span class="meta">${paraRevisar ? `${paraRevisar} para revisar hoje` : 'nada vencido hoje'}</span></div>
+              <div class="cr-botoes">
+                ${paraRevisar ? `<button class="btn btn-principal" data-estudar="hoje">Revisar (${paraRevisar})</button>` : ''}
+                <button class="btn" data-estudar="todos">Estudar todos</button>
+              </div>
+            </div>
+            <ul class="lista-simples">${cartoes.slice(0, 8).map((x) => `<li><b>${esc(x.frente.slice(0, 100))}${x.imagemFrente ? ' 🖼' : ''}</b><span class="meta">${x.revisoes ? `próxima ${formatoCurto(x.vence)}` : 'novo'}</span></li>`).join('')}</ul>` : vazio('Sem cartões. Transforme uma dúvida em cartão.') })}
       </div>
     </div>`;
 
@@ -306,11 +338,18 @@ function paginaAssunto(el, m, id, assunto) {
   lembrarAberto(el);
   mostrarImagens(el);
   const ctx = { cadeiraId: id, assunto };
-  const acoes = { duvida: novaDuvida, questao: novaQuestao, material: novoMaterial, cartao: novoCartao, estudo: (mm, x) => novoEstudo(mm, { ...x }) };
+  const acoes = {
+    duvida: novaDuvida, questao: novaQuestao, material: novoMaterial, cartao: novoCartao, estudo: (mm, x) => novoEstudo(mm, { ...x }),
+    aula: (mm, x) => formularioAula(mm, { cadeiraId: x.cadeiraId, assunto: x.assunto }),
+    gravar: gravarAudio,
+    modoAula: abrirModoAula,
+  };
   el.querySelectorAll('[data-mais]').forEach((b) => b.addEventListener('click', () => acoes[b.dataset.mais](m, ctx)));
-  el.querySelector('[data-revisar]')?.addEventListener('click', () => revisarAssunto(id, assunto));
+  el.querySelector('[data-revisar]')?.addEventListener('click', () => estudarAssunto(m, id, assunto));
+  el.querySelectorAll('[data-estudar]').forEach((b) => b.addEventListener('click', () => estudarAssunto(m, id, assunto, { todos: b.dataset.estudar === 'todos' })));
   el.querySelector('[data-renomear]').addEventListener('click', () => renomearAssunto(m, id, assunto));
-  el.querySelectorAll('[data-assunto-aula]').forEach((b) => b.addEventListener('click', () => editarAssuntoDaAula(m, m.aulas.find((a) => a.id === b.dataset.assuntoAula))));
+  el.querySelector('[data-atalho-cadeira]').addEventListener('click', () => atalhoEmOutraCadeira(m, id, assunto));
+  el.querySelectorAll('[data-editar-aula]').forEach((b) => b.addEventListener('click', () => formularioAula(m, m.aulas.find((a) => a.id === b.dataset.editarAula))));
   el.querySelectorAll('[data-goodnotes]').forEach((b) =>
     b.addEventListener('click', () => novoMaterial(m, { cadeiraId: id, assunto, tipo: `Goodnotes | ${b.dataset.goodnotes === 'pessoal' ? 'Pessoal' : 'Colaborativo'}` }))
   );
@@ -355,7 +394,7 @@ export function linhaEstudo(m, e, { mostrarCadeira = true, botaoHoje = false } =
       ${e.avaliacaoId && m.avaliacoes.some((a) => a.id === e.avaliacaoId) ? `<span class="tag tag-av">${icone('avaliacoes', 'ic-mini')} ${esc(m.avaliacoes.find((a) => a.id === e.avaliacaoId).titulo)}</span>` : ''}
       <p class="meta">${e.data ? `${esc(dataCurta(e.data))}${e.inicio ? ` ${esc(e.inicio)}` : ''}` : '<span class="tag">sem data</span>'}
         ${mostrarCadeira && e.cadeiraId ? ` · <a href="#/cadeiras/${encodeURIComponent(e.cadeiraId)}">${esc(nomeCadeira(m, e.cadeiraId))}</a>` : ''}${!e.cadeiraId ? ' · Pessoal' : ''}${e.assunto && !mostrarCadeira ? '' : e.assunto ? ` · ${esc(e.assunto)}` : ''}</p>
-      ${e.obs ? `<p class="estudo-obs">${linkificar(e.obs)}</p>` : ''}
+      ${e.obs ? `<p class="estudo-obs">${formatar(e.obs)}</p>` : ''}
     </div>
     ${botaoHoje && !e.data ? `<button class="btn-mini" data-para-hoje="${esc(e.id)}">para hoje</button>` : ''}
     ${mostrarCadeira && e.cadeiraId && e.assunto ? `<a class="btn-mini btn-abrir" href="#/cadeiras/${encodeURIComponent(e.cadeiraId)}/${encodeURIComponent(e.assunto)}">Abrir assunto ${icone('seta', 'ic-mini')}</a>` : ''}

@@ -54,7 +54,7 @@ let contexto = {}; // cadeira/assunto da tela atual, usado no "+ Registrar"
 function montarMenu() {
   const item = (i) => {
     const n = i.contador && modelo ? i.contador(modelo) : 0;
-    return `<li><a href="#/${i.rota}" data-rota="${i.rota}">${icone(i.icone)}<span>${esc(i.nome)}</span>${n ? `<b class="contador">${n}</b>` : ''}</a></li>`;
+    return `<li><a href="#/${i.rota}" data-rota="${i.rota}" title="${esc(i.nome)}">${icone(i.icone)}<span>${esc(i.nome)}</span>${n ? `<b class="contador">${n}</b>` : ''}</a></li>`;
   };
   let html = '';
   let aberto = false;
@@ -68,7 +68,41 @@ function montarMenu() {
   elMenu.innerHTML = html;
 }
 
+/** Menu lateral recolhido (só ícones): mais espaço de tela. Lembrado neste navegador. */
+const CHAVE_MENU = 'codigom.menuRecolhido';
+function montarRecolherMenu() {
+  if (document.getElementById('recolher-menu')) return;
+  const botao = document.createElement('button');
+  botao.id = 'recolher-menu';
+  botao.className = 'recolher-menu';
+  const aplicar = (recolhido) => {
+    document.body.classList.toggle('menu-recolhido', recolhido);
+    botao.innerHTML = icone(recolhido ? 'proximo' : 'anterior', 'ic-mini');
+    botao.title = recolhido ? 'Abrir o menu' : 'Recolher o menu (mais espaço)';
+    botao.setAttribute('aria-label', botao.title);
+    botao.setAttribute('aria-expanded', String(!recolhido));
+  };
+  let recolhido = false;
+  try {
+    recolhido = localStorage.getItem(CHAVE_MENU) === '1';
+  } catch {
+    /* sem armazenamento */
+  }
+  aplicar(recolhido);
+  botao.addEventListener('click', () => {
+    recolhido = !document.body.classList.contains('menu-recolhido');
+    aplicar(recolhido);
+    try {
+      localStorage.setItem(CHAVE_MENU, recolhido ? '1' : '0');
+    } catch {
+      /* sem armazenamento */
+    }
+  });
+  document.querySelector('.lateral .marca').after(botao);
+}
+
 function montarBarra() {
+  montarRecolherMenu();
   document.getElementById('abrir-menu').innerHTML = icone('menu');
   document.getElementById('abrir-menu').addEventListener('click', () => document.body.classList.add('menu-aberto'));
   document.getElementById('fundo-menu').addEventListener('click', () => document.body.classList.remove('menu-aberto'));

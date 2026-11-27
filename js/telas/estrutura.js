@@ -99,17 +99,52 @@ export function renomearAssunto(m, cadeiraId, assunto) {
   });
 }
 
-/** Trocar o assunto de UMA aula (ex.: a aula foi sobre outro tema). */
-export function editarAssuntoDaAula(m, aula) {
+const TIPOS_AULA = ['Teórica', 'Prática', 'Tutoria', 'Campo', 'Caso clínico', 'Módulo', 'Outro'];
+
+/**
+ * + Aula ou editar uma aula: data, horário, tipo, local, professor, cadeira
+ * e assunto. Mudar cadeira/assunto aqui muda só ESTA aula (para o assunto
+ * inteiro, use "Renomear / mudar cadeira" no topo da página do assunto).
+ */
+export function formularioAula(m, aula = {}) {
+  const editar = Boolean(aula.id);
   abrirFormulario({
-    titulo: 'Assunto desta aula',
-    intro: 'Muda só esta aula. Para mudar o nome do assunto inteiro, use “Renomear / mover” no topo da página.',
+    titulo: editar ? 'Aula' : 'Nova aula',
+    intro: editar ? 'Muda só esta aula. Para o assunto inteiro, use “Renomear / mudar cadeira” no topo da página do assunto.' : '',
     campos: [
-      { nome: 'assunto', rotulo: 'Assunto', valor: aula.assunto, obrigatorio: true, largo: true, sugestoes: assuntosDaCadeira(m, aula.cadeiraId), dica: 'Escolha um assunto existente ou escreva um novo.' },
+      { nome: 'data', rotulo: 'Data', tipo: 'date', valor: aula.data ?? m.hoje, obrigatorio: true },
+      { nome: 'tipo', rotulo: 'Tipo', tipo: 'select', opcoes: TIPOS_AULA.map((t) => ({ valor: t, texto: t })), valor: aula.tipo || 'Teórica' },
+      { nome: 'inicio', rotulo: 'Início', tipo: 'time', valor: aula.inicio ?? '' },
+      { nome: 'fim', rotulo: 'Fim', tipo: 'time', valor: aula.fim ?? '' },
+      { nome: 'cadeira_id', rotulo: 'Cadeira', tipo: 'select', opcoes: opcoesCadeira(m), valor: aula.cadeiraId ?? '', obrigatorio: true },
+      { nome: 'assunto', rotulo: 'Assunto', valor: aula.assunto ?? '', obrigatorio: true, largo: true, dependeDe: 'cadeira_id',
+        sugestoes: (cad) => (cad ? assuntosDaCadeira(m, cad) : []), dica: 'Escolha um assunto existente ou escreva um novo.' },
+      { nome: 'local', rotulo: 'Local', valor: aula.local ?? '' },
+      { nome: 'professor', rotulo: 'Professor(a)', valor: aula.professor ?? '' },
     ],
     aoSalvar: async (v) => {
-      await atualizar('Aulas', aula.id, { assunto: v.assunto });
-      aviso('Aula atualizada.');
+      if (editar) await atualizar('Aulas', aula.id, v, { silencioso: true });
+      else await adicionar('Aulas', { id: novoId('A'), turma: 'Todas', ...v }, { silencioso: true });
+      avisarMudanca();
+      aviso(editar ? 'Aula atualizada.' : 'Aula criada.');
+      const mudou = !editar || v.cadeira_id !== aula.cadeiraId || !mesmoAssunto(v.assunto, aula.assunto);
+      if (mudou) irPara(v.cadeira_id, v.assunto);
+    },
+  });
+}
+
+/** Atalho rápido: o assunto aparece também em outra cadeira. */
+export function atalhoEmOutraCadeira(m, cadeiraId, assunto) {
+  const reg = registroAssunto(m, cadeiraId, assunto);
+  abrirFormulario({
+    titulo: 'Atalho em outra cadeira',
+    intro: `“${assunto}” continua em ${nomeCadeira(m, cadeiraId)} e aparece também na cadeira escolhida, como atalho para esta página.`,
+    campos: [campoSecundaria(m, cadeiraId, reg?.secundaria ?? '')],
+    aoSalvar: async (v) => {
+      if (reg) await atualizar('Assuntos', reg.id, { cadeira_secundaria: v.cadeira_secundaria }, { silencioso: true });
+      else await adicionar('Assuntos', { id: novoId('AS'), cadeira_id: cadeiraId, assunto, cadeira_secundaria: v.cadeira_secundaria, criado: m.hoje, obs: '' }, { silencioso: true });
+      avisarMudanca();
+      aviso(v.cadeira_secundaria ? `Atalho criado em ${nomeCadeira(m, v.cadeira_secundaria)}.` : 'Atalho removido.');
     },
   });
 }

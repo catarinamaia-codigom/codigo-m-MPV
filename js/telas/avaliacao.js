@@ -2,7 +2,7 @@
 // anexados (que também aparecem no material geral da cadeira e, se ligados,
 // nas aulas/assuntos) e as atividades de execução (escrever trabalho etc.).
 
-import { esc, linkificar } from '../util/texto.js';
+import { esc, formatar } from '../util/texto.js';
 import { formatoLongo, diasEntre } from '../util/datas.js';
 import { icone } from '../ui/icones.js';
 import { abrirModal, vazio } from '../ui/componentes.js';
@@ -29,8 +29,8 @@ export function abrirAvaliacao(m, a) {
         ${a.vale !== null ? `<span class="tag">vale ${num(a.vale)}</span>` : ''}
         ${a.nota !== null ? `<span class="tag tag-ok">tirei ${num(a.nota)}</span>` : ''}
         ${a.entrega ? `<span class="tag ${a.entrega === 'Pendente' ? 'tag-alerta' : ''}">${esc(a.entrega)}</span>` : ''}</p>
-      ${a.conteudo ? `<div class="av-bloco"><span class="rotulo-lado">Conteúdo</span><p>${linkificar(a.conteudo)}</p></div>` : ''}
-      ${a.obs ? `<div class="av-bloco"><span class="rotulo-lado">Observação</span><p>${linkificar(a.obs)}</p></div>` : ''}
+      ${a.conteudo ? `<div class="av-bloco"><span class="rotulo-lado">Conteúdo</span><p>${formatar(a.conteudo)}</p></div>` : ''}
+      ${a.obs ? `<div class="av-bloco"><span class="rotulo-lado">Observação</span><p>${formatar(a.obs)}</p></div>` : ''}
 
       <section class="av-secao">
         <header><h3>${icone('materiais', 'ic-mini')} Materiais da avaliação <small>${materiais.length}</small></h3>

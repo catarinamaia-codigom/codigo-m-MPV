@@ -136,3 +136,11 @@ test('planilha: aba Assuntos é criada e várias linhas mudam numa só gravaçã
   const abas = await ad.lerAbas();
   assert.deepEqual(abas.Aulas.filter((a) => ids.includes(a.id)).map((a) => a.assunto), ['Novo nome', 'Novo nome', 'Novo nome']);
 });
+
+test('formatação simples: negrito, itálico, riscado, emojis e links, sem abrir brecha para HTML', async () => {
+  const { formatar, semFormatacao } = await import('../js/util/texto.js');
+  assert.equal(formatar('**Mitral** é *bicúspide* ~~tricúspide~~ 💡'), '<b>Mitral</b> é <i>bicúspide</i> <s>tricúspide</s> 💡');
+  assert.equal(formatar('2*3*4 e <b>x</b>'), '2*3*4 e &lt;b&gt;x&lt;/b&gt;', 'conta não vira itálico; HTML digitado é escapado');
+  assert.match(formatar('ver https://x.com/a_b*c*d'), /<a href="https:\/\/x\.com\/a_b\*c\*d"/, 'link com asteriscos continua inteiro');
+  assert.equal(semFormatacao('**Mitral** é *bicúspide* ~~tri~~'), 'Mitral é bicúspide tri');
+});

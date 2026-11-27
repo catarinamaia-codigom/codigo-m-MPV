@@ -46,7 +46,7 @@ export function abrirFormulario({ titulo, campos, aoSalvar, textoBotao = 'Salvar
         <img class="arquivo-previa" alt="" hidden>
       </div>`;
     } else if (c.tipo === 'textarea') {
-      entrada = `<textarea id="${id}" name="${c.nome}" rows="${c.linhas ?? 3}" ${req}>${valor}</textarea>`;
+      entrada = `${c.rico === false ? '' : barraFormatacao(id)}<textarea id="${id}" name="${c.nome}" rows="${c.linhas ?? 3}" ${req}>${valor}</textarea>`;
     } else if (c.tipo === 'radios' || c.tipo === 'checks') {
       const marcados = c.tipo === 'checks' ? String(c.valor ?? '').split(/\s*;\s*/) : [String(c.valor ?? '')];
       entrada = `<div class="opcoes-${c.tipo}" role="${c.tipo === 'radios' ? 'radiogroup' : 'group'}" aria-label="${esc(c.rotulo)}">
@@ -84,6 +84,7 @@ export function abrirFormulario({ titulo, campos, aoSalvar, textoBotao = 'Salvar
   );
 
   const form = document.querySelector('.modal .formulario');
+  ligarFormatacao(form);
   const erro = form.querySelector('.formulario-erro');
   form.querySelector('input:not([type=radio]):not([type=checkbox]), select, textarea')?.focus();
 
@@ -169,5 +170,51 @@ export function abrirFormulario({ titulo, campos, aoSalvar, textoBotao = 'Salvar
       botao.disabled = false;
       botao.textContent = textoBotao;
     }
+  });
+}
+
+// ── Formatação simples (negrito, itálico, riscado, lista, emojis) ──────────
+
+const EMOJIS = ['✅', '❗', '❓', '⭐', '💡', '📌', '⚠️', '🔴', '🟢', '🧠', '❤️', '👀'];
+
+/** Barra acima de um campo de texto longo. Os sinais ficam no texto: **negrito**, *itálico*, ~~riscado~~. */
+export function barraFormatacao(idCampo) {
+  return `<div class="barra-formatacao" data-para="${idCampo}" role="toolbar" aria-label="Formatação">
+    <button type="button" data-marca="**" title="Negrito (⌘B / Ctrl+B)"><b>B</b></button>
+    <button type="button" data-marca="*" title="Itálico (⌘I / Ctrl+I)"><i>I</i></button>
+    <button type="button" data-marca="~~" title="Riscado"><s>S</s></button>
+    <button type="button" data-lista title="Lista">•</button>
+    <span class="bf-emojis">${EMOJIS.map((e) => `<button type="button" data-emoji="${e}" title="Inserir ${e}">${e}</button>`).join('')}</span>
+  </div>`;
+}
+
+/** Aplica a marca em volta do trecho selecionado (ou insere no cursor). */
+function marcar(campo, inicio, fim = inicio) {
+  const { selectionStart: a, selectionEnd: b, value: v } = campo;
+  const trecho = v.slice(a, b);
+  campo.setRangeText(`${inicio}${trecho}${fim}`, a, b, 'end');
+  if (!trecho) campo.setSelectionRange(a + inicio.length, a + inicio.length);
+  campo.focus();
+  campo.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+export function ligarFormatacao(raiz) {
+  raiz.querySelectorAll('.barra-formatacao').forEach((barra) => {
+    const campo = raiz.querySelector(`#${CSS.escape(barra.dataset.para)}`);
+    if (!campo) return;
+    barra.addEventListener('mousedown', (e) => e.preventDefault()); // não tira o foco do campo
+    barra.querySelectorAll('[data-marca]').forEach((b) => b.addEventListener('click', () => marcar(campo, b.dataset.marca, b.dataset.marca)));
+    barra.querySelectorAll('[data-emoji]').forEach((b) => b.addEventListener('click', () => marcar(campo, b.dataset.emoji, '')));
+    barra.querySelector('[data-lista]').addEventListener('click', () => {
+      const a = campo.selectionStart;
+      const comecoLinha = campo.value.lastIndexOf('\n', a - 1) + 1;
+      campo.setRangeText('• ', comecoLinha, comecoLinha, 'end');
+      campo.focus();
+    });
+    campo.addEventListener('keydown', (e) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key.toLowerCase() === 'b') (e.preventDefault(), marcar(campo, '**', '**'));
+      if (e.key.toLowerCase() === 'i') (e.preventDefault(), marcar(campo, '*', '*'));
+    });
   });
 }

@@ -4,7 +4,7 @@
 // arquivos do Drive abrem no visualizador lateral, sem sair do Código M.
 // Excluir não apaga na hora: o material vai para Pendências › A excluir.
 
-import { esc, linkificar } from '../util/texto.js';
+import { esc, formatar } from '../util/texto.js';
 import { formatoCurto } from '../util/datas.js';
 import { icone } from '../ui/icones.js';
 import { chips, seletorCadeira, ligarFiltros, vazio, aviso, casa, kpi } from '../ui/componentes.js';
@@ -13,6 +13,7 @@ import { nomeCadeira } from '../dados/consultas.js';
 import { novoMaterial, editarMaterial, novaDuvida } from './formularios.js';
 import { formaDeVer, baixar } from '../dados/drive.js';
 import { abrirVisualizador } from '../ui/visualizador.js';
+import { abrirModoAula } from '../ui/modoAula.js';
 import { sortearPergunta } from '../regras/perguntas.js';
 
 const estado = { cadeira: '', origem: 'todas', busca: '', tipo: '' };
@@ -53,7 +54,7 @@ export function linhaMaterial(m, x, { mostrarCadeira = true, mostrarAssunto = fa
         <p class="meta">${esc(x.tipo)}${onde ? ` · ${esc(onde)}` : ''}${x.criado ? ` · ${formatoCurto(x.criado)}` : ''}
           ${av ? ` · <span class="tag tag-av" title="Material da avaliação">${icone('avaliacoes', 'ic-mini')} ${esc(av.titulo)}</span>` : ''}
           ${atalho ? ` · <span class="tag tag-atalho" title="Ligado também a este assunto">${icone('link', 'ic-mini')} atalho de ${esc(x.assunto || nomeCadeira(m, x.cadeiraId))}</span>` : ''}</p>
-        ${x.obs ? `<p class="material-obs">${linkificar(x.obs)}</p>` : ''}
+        ${x.obs ? `<p class="material-obs">${formatar(x.obs)}</p>` : ''}
       </div>
       ${x.driveId ? `<span class="tag tag-ok" title="Guardado no Drive">${icone('nuvem', 'ic-mini')} Drive</span>` : ''}
       ${x.autor ? `<span class="tag tag-sigla" title="Enviado por colaboradora">${esc(x.autor)}</span>` : `<span class="tag ${x.origem === 'Turma' ? 'tag-turma' : ''}">${esc(x.origem)}</span>`}
@@ -94,6 +95,7 @@ export function abrirMaterial(m, x) {
     contexto: [nomeCadeira(m, x.cadeiraId), x.assunto].filter(Boolean).join(' · '),
     aoBaixar: forma.driveId ? () => baixar(forma.driveId, x.titulo) : null,
     aoNovaDuvida: () => novaDuvida(m, { cadeiraId: x.cadeiraId, assunto: x.assunto, materialId: x.virtual ? '' : x.id }),
+    aoModoAula: () => abrirModoAula(m, { cadeiraId: x.cadeiraId, assunto: x.assunto }),
     aoExcluir: x.virtual ? null : () => pedirExclusao(m, x),
   });
 }
@@ -149,7 +151,7 @@ function cartaoPergunta(m) {
         ${p ? `
           <p class="pa-texto">${esc(p.texto)}</p>
           <p class="meta">${esc(p.origem)} · <a href="#/cadeiras/${encodeURIComponent(p.cadeiraId)}${p.assunto ? `/${encodeURIComponent(p.assunto)}` : ''}">${esc(nomeCadeira(m, p.cadeiraId))}${p.assunto ? ` · ${esc(p.assunto)}` : ''}</a></p>
-          ${p.resposta ? (respostaVisivel ? `<div class="pa-resposta">${linkificar(p.resposta)}</div>` : '<button class="btn-mini" data-ver-resposta>Ver resposta</button>') : '<p class="meta">Responda de memória (em voz alta ou no papel) e depois confira no material do assunto.</p>'}`
+          ${p.resposta ? (respostaVisivel ? `<div class="pa-resposta">${formatar(p.resposta)}</div>` : '<button class="btn-mini" data-ver-resposta>Ver resposta</button>') : '<p class="meta">Responda de memória (em voz alta ou no papel) e depois confira no material do assunto.</p>'}`
         : `<p class="meta">Sorteia uma pergunta dos seus cartões, das dúvidas já sanadas ou de modelos sobre os assuntos que já tiveram aula${estado.cadeira ? ' desta cadeira' : ''}. Responda sem consultar.</p>`}
       </div>
     </section>`;

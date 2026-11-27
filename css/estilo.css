@@ -1342,3 +1342,111 @@ body.com-visualizador .ideias { right: calc(min(560px, 42vw) + 28px); }
 @media (max-width: 640px) {
   .anki-deck, .anki-exemplo { grid-template-columns: 1fr; }
 }
+
+/* ── Menu lateral recolhido (só ícones) ── */
+.recolher-menu {
+  position: absolute; top: 22px; right: -11px; width: 22px; height: 22px; border-radius: 99px; z-index: 2;
+  display: grid; place-items: center; padding: 0; border: 1px solid var(--vidro-borda, var(--linha));
+  background: #fff; color: var(--texto-2); box-shadow: 0 2px 8px rgba(30, 32, 40, 0.15); cursor: pointer;
+}
+.recolher-menu:hover { color: var(--vermelho); }
+.lateral { overflow: visible; }
+#menu { flex: 0 1 auto; overflow-y: auto; min-height: 0; }
+@media (min-width: 861px) {
+  body.menu-recolhido { --lateral: 64px; }
+  body.menu-recolhido .lateral { padding-left: 8px; padding-right: 8px; }
+  body.menu-recolhido .marca { justify-content: center; padding-left: 0; padding-right: 0; }
+  body.menu-recolhido .marca-nome,
+  body.menu-recolhido #menu a span,
+  body.menu-recolhido .menu-secao,
+  body.menu-recolhido .lateral-rodape > :not(.btn-google) { display: none; }
+  body.menu-recolhido #menu a { justify-content: center; padding-left: 0; padding-right: 0; position: relative; }
+  body.menu-recolhido #menu a .contador { position: absolute; top: 2px; right: 4px; min-width: 16px; height: 16px; font-size: 10px; padding: 0 4px; }
+  body.menu-recolhido .lateral-rodape .btn-google { padding: 8px 0; font-size: 0; gap: 0; }
+  body.menu-recolhido .lateral-rodape { padding-left: 0; padding-right: 0; }
+}
+@media (max-width: 860px) { .recolher-menu { display: none; } }
+
+/* ── Barra de formatação (negrito, itálico, emojis) ── */
+.barra-formatacao { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; margin-bottom: 4px; }
+.barra-formatacao button { border: 1px solid transparent; background: none; border-radius: 6px; min-width: 26px; height: 26px; padding: 0 5px; font-size: 13px; color: var(--texto-2); cursor: pointer; }
+.barra-formatacao button:hover { background: rgba(43, 45, 51, 0.07); border-color: var(--linha); color: var(--grafite); }
+.bf-emojis { display: inline-flex; gap: 0; margin-left: 4px; padding-left: 4px; border-left: 1px solid var(--linha); flex-wrap: wrap; }
+.bf-emojis button { min-width: 24px; padding: 0 2px; }
+
+/* ── Cartões do assunto: número clicável e estudo ── */
+.cartoes-resumo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 10px; margin-bottom: 6px; border-bottom: 1px solid var(--linha); }
+.cr-numero { display: grid; justify-items: center; min-width: 64px; padding: 6px 10px; border-radius: 12px; border: 1px solid var(--vidro-borda, var(--linha)); background: rgba(255, 255, 255, 0.7); cursor: pointer; }
+.cr-numero b { font-size: 22px; line-height: 1.1; color: var(--grafite); }
+.cr-numero span { font-size: 11px; color: var(--texto-3); }
+.cr-numero:hover { border-color: var(--grafite); }
+.cr-texto { display: grid; gap: 1px; font-size: 13px; flex: 1; min-width: 160px; }
+.cr-botoes { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Gravador de áudio (pílula flutuante) ── */
+.gravador {
+  position: fixed; left: calc(var(--lateral) + 36px); bottom: 18px; z-index: 45; display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px 8px 14px; border-radius: 99px; background: rgba(255, 255, 255, 0.92); border: 1px solid var(--vidro-borda, var(--linha));
+  box-shadow: var(--sombra-pop); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); max-width: calc(100vw - var(--lateral) - 60px);
+}
+.gravador-ponto { width: 12px; height: 12px; border-radius: 50%; background: var(--vermelho); animation: pulsar 1.2s ease-in-out infinite; flex: none; }
+.gravador.pausado .gravador-ponto { animation: none; background: var(--texto-3); }
+.gravador-icone { color: var(--vermelho); display: flex; }
+.gravador-info { display: grid; line-height: 1.2; min-width: 0; }
+.gravador-info b { font-variant-numeric: tabular-nums; font-size: 15px; }
+.gravador-info small { color: var(--texto-3); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+.gravador .btn { padding: 5px 12px; font-size: 13px; }
+.gravador-previa { width: 100%; margin-bottom: 10px; }
+@keyframes pulsar { 50% { opacity: 0.35; transform: scale(0.85); } }
+@media (max-width: 860px) {
+  .gravador { left: 8px; right: 8px; bottom: 8px; max-width: none; border-radius: 18px; }
+  .gravador-info { flex: 1; }
+}
+
+/* ── Modo aula: várias dúvidas ── */
+.modo-aula {
+  position: fixed; right: 12px; bottom: 12px; width: min(560px, 42vw); max-height: 46vh; z-index: 41; display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 12px; border-radius: 20px; background: rgba(255, 255, 255, 0.94); border: 1px solid var(--vidro-borda, var(--linha));
+  border-top: 4px solid var(--grafite, #2b2d33); box-shadow: var(--sombra-pop); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px);
+}
+.ma-topo { display: flex; align-items: center; gap: 4px; }
+.ma-topo h2 { flex: 1; font-size: 14px; display: flex; align-items: center; gap: 6px; margin: 0; }
+.ma-topo h2 small { color: var(--texto-3); font-weight: 500; }
+.ma-topo .btn-icone { border: 0; background: none; box-shadow: none; width: 28px; height: 28px; }
+.ma-onde { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 6px; }
+.ma-onde select, .ma-onde input, .ma-nova textarea, .ma-nova select { width: 100%; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--neutro-borda); background: rgba(255, 255, 255, 0.8); font: inherit; font-size: 13px; }
+.ma-lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: grid; gap: 4px; min-height: 0; flex: 0 1 auto; }
+.ma-lista li { display: flex; gap: 6px; font-size: 12.5px; align-items: flex-start; }
+.ma-lista li span:last-child { display: grid; min-width: 0; }
+.ma-lista small { color: var(--texto-3); }
+.ma-ok { color: var(--verde); display: flex; margin-top: 2px; }
+.ma-nova { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ma-nova textarea { resize: vertical; min-height: 54px; }
+.ma-acoes { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; }
+.ma-acoes select { width: auto; flex: 1; }
+.ma-acoes .btn { padding: 6px 14px; }
+.modo-aula.recolhido > :not(.ma-topo) { display: none; }
+.modo-aula.recolhido .ma-topo [data-ma="recolher"] { transform: rotate(180deg); }
+body.com-modo-aula .principal { margin-right: calc(min(560px, 42vw) + 12px); }
+body.com-modo-aula .ideias { display: none; }
+body.com-modo-aula .gravador { left: calc(var(--lateral) + 36px); }
+/* Vídeo/arquivo aberto ao mesmo tempo: o visualizador fica em cima, as dúvidas embaixo */
+body.com-modo-aula .visualizador:not(.vis-youtube) { bottom: calc(46vh + 24px); }
+body.com-modo-aula .visualizador.vis-youtube { max-height: calc(54vh - 36px); }
+body.com-modo-aula .visualizador.vis-youtube .vis-quadro { aspect-ratio: auto; flex: 1 1 auto; min-height: 120px; }
+@media (max-width: 860px) {
+  .modo-aula { left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 56vh; max-height: 56dvh; }
+  .ma-nova { grid-template-columns: 1fr; }
+  body.com-modo-aula .principal { margin-right: 0; padding-bottom: 58vh; }
+  body.com-modo-aula .visualizador, body.com-modo-aula .visualizador.largo { top: 8px; bottom: auto; height: 36vh; max-height: none; }
+  body.com-modo-aula .gravador { bottom: calc(56vh + 16px); }
+}
+/* Modo aula aberto (com ou sem vídeo): página do assunto em uma coluna, dúvidas em cima */
+@media (max-width: 1700px) {
+  body.com-modo-aula .grade-cadeira { grid-template-columns: minmax(0, 1fr); }
+  body.com-modo-aula .grade-cadeira > .coluna:last-child { order: -1; }
+}
+/* Pouco espaço: os botões da dúvida descem para baixo do texto (em vez de espremê-lo) */
+.duvida-topo { flex-wrap: wrap; }
+.duvida-texto { flex: 1 1 220px; }
+@media (max-width: 860px) { .ma-acoes .meta { display: none; } }

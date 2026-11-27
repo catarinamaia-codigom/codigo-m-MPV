@@ -416,6 +416,8 @@ export const REGISTROS = [
   { tipo: 'atividade', nome: 'Atividade (trabalho, extra…)', icone: 'trabalho', abrir: (m, x) => novoEstudo(m, { ...x, data: '', tipo: 'Escrevendo trabalho' }) },
   { tipo: 'cartao', nome: 'Cartão', icone: 'flashcard', abrir: novoCartao },
   { tipo: 'material', nome: 'Material', icone: 'materiais', abrir: novoMaterial },
+  { tipo: 'gravacao', nome: 'Gravar áudio da aula', icone: 'microfone', abrir: async (m, x) => (await import('../ui/gravador.js')).gravarAudio(m, x) },
+  { tipo: 'modoaula', nome: 'Várias dúvidas (modo aula)', icone: 'questoes', abrir: async (m, x) => (await import('../ui/modoAula.js')).abrirModoAula(m, x) },
   { tipo: 'avaliacao', nome: 'Avaliação', icone: 'avaliacoes', abrir: novaAvaliacao },
   { tipo: 'pendencia', nome: 'Pendência', icone: 'pendencias', abrir: novaPendencia },
 ];

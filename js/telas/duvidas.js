@@ -1,7 +1,7 @@
 // Tela DÚVIDAS — aba única na planilha. Tentativa própria ao lado da resposta
 // conferida com fonte. Sanar em qualquer tela atualiza todas.
 
-import { esc, linkificar } from '../util/texto.js';
+import { esc, formatar, semFormatacao } from '../util/texto.js';
 import { formatoCurto } from '../util/datas.js';
 import { icone } from '../ui/icones.js';
 import { chips, seletorCadeira, ligarFiltros, vazio, aviso, copiar, casa, kpi } from '../ui/componentes.js';
@@ -24,7 +24,7 @@ export function cartaoDuvida(m, d, { mostrarCadeira = true, atalho = false } = {
   const link = d.link ? `<a href="${esc(d.link)}" target="_blank" rel="noopener">${icone('externo', 'ic-mini')} link</a>` : '';
   const material = d.materialId && m.materiais.find((x) => x.id === d.materialId);
   const temResposta = Boolean(d.tentativa || d.resposta);
-  const previa = (d.resposta || d.tentativa).replace(/\s+/g, ' ').slice(0, 90);
+  const previa = semFormatacao(d.resposta || d.tentativa).replace(/\s+/g, ' ').slice(0, 90);
   return `
     <article class="duvida ${d.sanada ? 'sanada' : ''}">
       <div class="duvida-topo">
@@ -49,11 +49,11 @@ export function cartaoDuvida(m, d, { mostrarCadeira = true, atalho = false } = {
           ${!d.resposta ? `<button class="colar-verde" data-colar-resposta="${esc(d.id)}" title="Cola o que está copiado como resposta conferida">${icone('colar', 'ic-mini')} colar resposta</button>` : ''}
         </summary>
         <div class="duvida-lados">
-          <div><span class="rotulo-lado">Minha tentativa</span><p>${linkificar(d.tentativa) || '<span class="meta">—</span>'}</p></div>
+          <div><span class="rotulo-lado">Minha tentativa</span><p>${formatar(d.tentativa) || '<span class="meta">—</span>'}</p></div>
           <div class="lado-verde" data-colar-resposta="${esc(d.id)}" role="button" tabindex="0" title="Clique para colar a resposta conferida que você copiou">
             <span class="rotulo-lado">Resposta conferida ${icone('colar', 'ic-mini')}</span>
-            <p>${linkificar(d.resposta) || '<span class="meta">clique aqui para colar a resposta que você copiou</span>'}</p>
-            ${d.fonte || link ? `<p class="meta">${d.fonte ? `Fonte: ${linkificar(d.fonte)} ` : ''}${link}</p>` : ''}</div>
+            <p>${formatar(d.resposta) || '<span class="meta">clique aqui para colar a resposta que você copiou</span>'}</p>
+            ${d.fonte || link ? `<p class="meta">${d.fonte ? `Fonte: ${formatar(d.fonte)} ` : ''}${link}</p>` : ''}</div>
         </div>
       </details>` : ''}
     </article>`;
@@ -138,8 +138,14 @@ Siga a ordem definição → localização → função normal → alteração i
   );
 }
 
-export function render(el, m) {
-  const redesenhar = () => render(el, m);
+let ultimoParametro = '';
+export function render(el, m, [cadeiraDaRota = ''] = []) {
+  // Vindo de uma cadeira (#/duvidas/histologia): abre já filtrado, com todas as dúvidas dela
+  if (cadeiraDaRota !== ultimoParametro) {
+    ultimoParametro = cadeiraDaRota;
+    if (cadeiraDaRota) Object.assign(estado, { cadeira: cadeiraDaRota, status: 'todas', motivo: '' });
+  }
+  const redesenhar = () => render(el, m, [cadeiraDaRota]);
   const abertas = m.duvidas.filter((d) => !d.sanada);
   const lista = m.duvidas.filter(
     (d) =>

@@ -1,14 +1,14 @@
 // Tela MÉTODO CATARINA — revisão espaçada (FSRS) com cartões validados por
 // ela (prioridade) e automáticos (Anki, IA). Estatísticas no estilo do Anki.
 
-import { esc } from '../util/texto.js';
+import { esc, formatar } from '../util/texto.js';
 import { somarDias, diasEntre, formatoCurto } from '../util/datas.js';
 import { icone } from '../ui/icones.js';
 import { kpi, vazio, aviso, seletorCadeira, ligarFiltros, casa } from '../ui/componentes.js';
 import { atualizar, adicionar, avisarMudanca, emSimulacao } from '../dados/dataSource.js';
 import { nomeCadeira } from '../dados/consultas.js';
 import { revisar, previa } from '../regras/fsrs.js';
-import { novoCartao } from './formularios.js';
+import { novoCartao, novaDuvida } from './formularios.js';
 import { mesmoAssunto } from '../regras/dominio.js';
 import { mostrarImagens } from '../dados/drive.js';
 import { importarAnki } from './importarAnki.js';
@@ -83,12 +83,13 @@ function telaRevisao(el, m) {
         <span>${restantes} restante(s)</span>
         <span class="tag">${esc(nomeCadeira(m, c.cadeiraId))}${c.assunto ? ` · ${esc(c.assunto)}` : ''}</span>
         ${c.validado ? '<span class="tag tag-ok">validado</span>' : `<span class="tag">${esc(c.origem)}</span>`}
+        <button class="btn-mini" data-duvida-extra title="Surgiu uma dúvida? Anote para sanar depois (o cartão continua aqui)">${icone('duvidas', 'ic-mini')} + Dúvida</button>
         <button class="btn-mini" data-sair>${icone('fechar', 'ic-mini')} Encerrar</button>
       </div>
       <div class="revisao-cartao">
-        <p class="revisao-frente">${esc(c.frente)}</p>
+        <p class="revisao-frente">${formatar(c.frente)}</p>
         ${c.imagemFrente ? `<img class="revisao-imagem" data-imagem-drive="${esc(c.imagemFrente)}" alt="Imagem da frente">` : ''}
-        ${sessao.mostrando ? `<hr><p class="revisao-verso">${esc(c.verso)}</p>${c.imagemVerso ? `<img class="revisao-imagem" data-imagem-drive="${esc(c.imagemVerso)}" alt="Imagem do verso">` : ''}${c.fonte ? `<p class="meta">Fonte: ${esc(c.fonte)}</p>` : ''}` : ''}
+        ${sessao.mostrando ? `<hr><p class="revisao-verso">${formatar(c.verso)}</p>${c.imagemVerso ? `<img class="revisao-imagem" data-imagem-drive="${esc(c.imagemVerso)}" alt="Imagem do verso">` : ''}${c.fonte ? `<p class="meta">Fonte: ${esc(c.fonte)}</p>` : ''}` : ''}
       </div>
       <div class="revisao-acoes">
         ${sessao.mostrando
@@ -124,8 +125,10 @@ function telaRevisao(el, m) {
     sessao = null;
     avisarMudanca();
   });
+  el.querySelector('[data-duvida-extra]').addEventListener('click', () => novaDuvida(m, { cadeiraId: c.cadeiraId, assunto: c.assunto }));
   teclas = (e) => {
-    if (!sessao || e.target.closest('input, textarea, select')) return;
+    // Digitando (ou com uma janela aberta, ex.: + Dúvida) as teclas não respondem o cartão
+    if (!sessao || e.target.closest('input, textarea, select') || document.querySelector('.modal-fundo')) return;
     if (e.key === ' ' && !sessao.mostrando) {
       e.preventDefault();
       sessao.mostrando = true;
@@ -200,6 +203,24 @@ export function revisarAssunto(cadeiraId, assunto) {
   estado.cadeira = cadeiraId;
   estado.assunto = assunto;
   location.hash = '#/metodo';
+}
+
+/**
+ * Começa a estudar agora os cartões de um assunto.
+ * todos = false: os vencidos e os novos (como no dia a dia);
+ * todos = true: todos os cartões do assunto (ex.: véspera de prova).
+ */
+export function estudarAssunto(m, cadeiraId, assunto, { todos = false } = {}) {
+  estado.cadeira = cadeiraId;
+  estado.assunto = assunto;
+  const daqui = (c) => c.cadeiraId === cadeiraId && mesmoAssunto(c.assunto, assunto);
+  const fila = todos
+    ? m.cartoes.filter(daqui).sort((a, b) => (a.vence || '').localeCompare(b.vence || '')).map((c) => c.id)
+    : montarFila(m, daqui);
+  if (!fila.length) return aviso('Nenhum cartão para revisar agora neste assunto.');
+  sessao = { fila, i: 0, mostrando: false, feitos: 0 };
+  if (location.hash === '#/metodo') window.dispatchEvent(new HashChangeEvent('hashchange'));
+  else location.hash = '#/metodo';
 }
 
 
