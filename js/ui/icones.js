@@ -61,6 +61,7 @@ const ICONES = {
   baixar: P('M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14'),
   play: C(12, 12, 8.5) + P('M10.2 8.8v6.4l5.3-3.2z'),
   colar: R(6, 4.5, 12, 16, 2) + P('M9.5 4.5V3.5h5v1M9 10h6M9 13.5h6M9 17h3.5'),
+  microfone: R(9, 3.5, 6, 11, 3) + P('M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M8.5 21h7'),
   pergunta: P('M4.5 5.5h15v10h-8l-4.5 4v-4h-2.5z') + P('M10 8.6a2 2 0 1 1 2.8 1.8c-.5.2-.8.6-.8 1.1v.4M12 13.5v.1'),
 };
 ICONES.questoesMaterial = ICONES.questoes;

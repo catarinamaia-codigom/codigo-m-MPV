@@ -17,7 +17,7 @@ import { aviso } from './componentes.js';
  * @param {() => void} [o.aoNovaDuvida]
  * @param {() => Promise<boolean>} [o.aoExcluir]  true = excluído (fecha o painel)
  */
-export function abrirVisualizador({ titulo, forma, link = '', contexto = '', aoBaixar, aoNovaDuvida, aoExcluir }) {
+export function abrirVisualizador({ titulo, forma, link = '', contexto = '', aoBaixar, aoNovaDuvida, aoModoAula, aoExcluir }) {
   fecharVisualizador();
   const painel = document.createElement('aside');
   painel.className = `visualizador vis-${forma.tipo}`;
@@ -33,6 +33,7 @@ export function abrirVisualizador({ titulo, forma, link = '', contexto = '', aoB
     </div>
     <div class="vis-acoes">
       ${aoNovaDuvida ? `<button class="btn" data-vis-duvida>${icone('duvidas', 'ic-mini')} + Dúvida</button>` : ''}
+      ${aoModoAula ? `<button class="btn" data-vis-modo-aula title="Painel para anotar várias dúvidas seguidas enquanto assiste">${icone('questoes', 'ic-mini')} Várias dúvidas</button>` : ''}
       ${aoBaixar ? `<button class="btn" data-vis-baixar>${icone('baixar', 'ic-mini')} Baixar</button>` : ''}
       ${link ? `<a class="btn" href="${esc(link)}" target="_blank" rel="noopener">${icone('externo', 'ic-mini')} Abrir em outra aba</a>` : ''}
       ${aoExcluir ? `<button class="btn btn-perigo" data-vis-excluir>${icone('lixeira', 'ic-mini')} Excluir</button>` : ''}
@@ -44,6 +45,7 @@ export function abrirVisualizador({ titulo, forma, link = '', contexto = '', aoB
   painel.querySelector('[data-vis-fechar]').addEventListener('click', fecharVisualizador);
   painel.querySelector('[data-vis-largura]').addEventListener('click', () => painel.classList.toggle('largo'));
   painel.querySelector('[data-vis-duvida]')?.addEventListener('click', aoNovaDuvida);
+  painel.querySelector('[data-vis-modo-aula]')?.addEventListener('click', aoModoAula);
   painel.querySelector('[data-vis-baixar]')?.addEventListener('click', async (e) => {
     const b = e.currentTarget;
     b.disabled = true;
