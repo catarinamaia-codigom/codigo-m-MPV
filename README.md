@@ -51,6 +51,20 @@ Site estático (HTML, CSS e JavaScript puros, sem build), publicado de graça no
 - **Pergunta de estudo ativo** (Materiais): sorteia de cartões, dúvidas sanadas e modelos sobre assuntos já vistos.
 - **Celular**: página do assunto em uma coluna; dúvidas, questões, cartões e estudos começam recolhidos.
 
+**Ideias de 27/11:**
+- **Aulas**: **+ Aula** na página do assunto (com data e horário) e o lápis de cada aula edita data, horário, tipo,
+  local, cadeira e assunto daquela aula; **Atalho em outra cadeira** no topo do assunto.
+- **Dúvidas da cadeira**: card com todas as dúvidas (sem resposta / respondidas / todas) e o número **Dúvidas respondidas**;
+  clicar leva à tela Dúvidas já filtrada pela cadeira (`#/duvidas/<cadeira>`).
+- **Negrito, itálico, riscado e emojis** nas respostas, tentativas e observações (barra acima do campo, ⌘/Ctrl+B e +I).
+  A planilha guarda `**negrito**`, `*itálico*`, `~~riscado~~`.
+- **Método Catarina**: botão **+ Dúvida** durante a revisão (o cartão continua; as teclas 1–4 não respondem enquanto digita).
+- **Cartões do assunto**: número de cartões, quantas vezes foram estudados e a última vez; **Revisar** (vencidos e novos) ou **Estudar todos**.
+- **Menu lateral recolhível** (só ícones), lembrado neste navegador.
+- **Gravar áudio** da aula (microfone no card Materiais ou "+ Registrar"): pílula flutuante com tempo, pausar e parar,
+  continua enquanto você navega; salva no Drive como material "Gravação de aula".
+- **Modo aula**: painel fixo para várias dúvidas seguidas (dúvida e tentativa lado a lado, Ctrl/⌘+Enter), junto com o vídeo aberto.
+
 **Importar do Anki (26/11):** Método Catarina › **Importar do Anki** aceita o baralho **.apkg** (e o backup
 **.colpkg**) dos formatos novo e antigo do Anki. Pergunta simples, básico com inverso, digitar a resposta,
 **omissão de palavras** (um cartão por lacuna, com dica) e **oclusão de imagem** (nativa e do complemento antigo)
